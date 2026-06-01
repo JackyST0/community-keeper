@@ -14,9 +14,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
+    chromium \
     fonts-liberation \
     git \
-    wget \
     xvfb \
     unzip \
     libasound2 \
@@ -45,10 +45,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxkbcommon0 \
     libxrandr2 \
     xdg-utils \
-  && wget -O /tmp/google-chrome-stable_current_amd64.deb \
-    https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-  && apt-get install -y /tmp/google-chrome-stable_current_amd64.deb \
-  && rm -rf /var/lib/apt/lists/* /tmp/google-chrome-stable_current_amd64.deb
+  && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -U pip \
