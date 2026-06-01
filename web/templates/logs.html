@@ -111,12 +111,12 @@
   }
 
   const logGroups = [
-    { key: "system", title: "系统与调度", icon: "⚙", hint: "启动、调度、运行摘要" },
-    { key: "nodeseek", title: "NodeSeek", icon: "N", hint: "NodeSeek 签到与账号信息" },
-    { key: "linuxdo", title: "LinuxDo", icon: "L", hint: "LinuxDo 登录、浏览、Connect" },
-    { key: "v2ex", title: "V2EX", icon: "V", hint: "V2EX 每日签到" },
-    { key: "naixi", title: "奶昔论坛", icon: "奶", hint: "奶昔论坛签到" },
-    { key: "other", title: "其他日志", icon: "·", hint: "未归类输出" },
+    { key: "system", title: "系统与调度", icon: "SYS", hint: "启动、调度、运行摘要" },
+    { key: "nodeseek", title: "NodeSeek", icon: "NS", hint: "签到、余额、账号信息" },
+    { key: "linuxdo", title: "LinuxDo", icon: "LD", hint: "登录、浏览、Connect" },
+    { key: "v2ex", title: "V2EX", icon: "VX", hint: "每日签到" },
+    { key: "naixi", title: "奶昔论坛", icon: "NX", hint: "每日签到" },
+    { key: "other", title: "其他日志", icon: "LOG", hint: "未归类输出" },
   ];
 
   function groupForLine(line, parsed) {
@@ -153,9 +153,22 @@
     const row = document.createElement("div");
     row.className = `log-line ${lineTone(line, parsed.level)}`;
 
+    const marker = document.createElement("span");
+    marker.className = "log-marker";
+
+    const content = document.createElement("div");
+    content.className = "log-entry-content";
+
+    const message = document.createElement("div");
+    message.className = "log-message";
+    message.textContent = prettyMessage(parsed.message || line);
+
+    const meta = document.createElement("div");
+    meta.className = "log-entry-meta";
+
     const time = document.createElement("span");
     time.className = "log-time";
-    time.textContent = parsed.time || " ";
+    time.textContent = formatTime(parsed.time);
 
     const level = document.createElement("span");
     level.className = `log-level ${lineTone(line, parsed.level)}`;
@@ -165,12 +178,41 @@
     source.className = "log-source";
     source.textContent = parsed.source || " ";
 
-    const message = document.createElement("span");
-    message.className = "log-message";
-    message.textContent = parsed.message || " ";
+    meta.append(time, level);
+    if (parsed.source) {
+      meta.appendChild(source);
+    }
+    content.append(message, meta);
 
-    row.append(time, level, source, message);
+    row.append(marker, content);
     return row;
+  }
+
+  function formatTime(value) {
+    if (!value) {
+      return "无时间";
+    }
+    const timePart = value.split(" ")[1] || value;
+    return timePart.replace(/\.\d+$/, "");
+  }
+
+  function prettyMessage(message) {
+    return message
+      .replace(/^Starting (.+) task$/, "开始执行 $1")
+      .replace(/^(.+) skipped: /, "$1 已跳过：")
+      .replace(/^(.+) completed: /, "$1 已完成：")
+      .replace(/^Runtime task summary: /, "本次运行摘要：")
+      .replace(/^Configured (\d+) NodeSeek account\(s\)$/, "已配置 $1 个 NodeSeek 账号")
+      .replace(/^NodeSeek accounts: /, "NodeSeek 账号：")
+      .replace(/^Starting NodeSeek daily mission for /, "开始执行 NodeSeek：")
+      .replace(/^NodeSeek attendance succeeded via browser: /, "NodeSeek 签到成功：")
+      .replace(/^Saved NODESEEK_COOKIE back to /, "已回写 NodeSeek Cookie：")
+      .replace(/^Saved browser cookies for /, "已保存浏览器 Cookie：")
+      .replace(/^Loaded NodeSeek credit summary via browser: /, "读取鸡腿摘要：")
+      .replace(/^Loaded NodeSeek profile summary via browser: /, "读取账号资料：")
+      .replace(/^Browser homepage: /, "浏览器首页：")
+      .replace(/^NodeSeek using browser for /, "使用浏览器执行账号：")
+      .replace(/^NodeSeek notification summary: /, "通知摘要：");
   }
 
   function renderLogs(text) {
