@@ -148,8 +148,9 @@ async def login_page(request: Request):
     if security.is_authenticated(request):
         return redirect("/")
     return templates.TemplateResponse(
-        "login.html",
-        template_context(
+        request=request,
+        name="login.html",
+        context=template_context(
             request,
             auth_ready=bool(
                 security.configured_password_hash()
@@ -187,8 +188,9 @@ async def dashboard(request: Request):
     if response := require_login(request):
         return response
     return templates.TemplateResponse(
-        "dashboard.html",
-        template_context(
+        request=request,
+        name="dashboard.html",
+        context=template_context(
             request,
             service_status=systemd.service_status(),
             timer_status=systemd.timer_status(),
@@ -203,8 +205,9 @@ async def config_page(request: Request):
         return response
     values = env_store.read_values()
     return templates.TemplateResponse(
-        "config.html",
-        template_context(
+        request=request,
+        name="config.html",
+        context=template_context(
             request,
             groups=grouped_fields(values),
             values=values,
@@ -252,8 +255,9 @@ async def logs_page(request: Request, lines: int = 200):
     if response := require_login(request):
         return response
     return templates.TemplateResponse(
-        "logs.html",
-        template_context(
+        request=request,
+        name="logs.html",
+        context=template_context(
             request,
             lines=max(20, min(lines, 1000)),
             logs=systemd.recent_logs(lines),
