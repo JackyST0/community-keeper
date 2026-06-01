@@ -183,6 +183,135 @@ pre {
   padding: 14px;
 }
 
+.platform-results-title {
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin: 4px 4px 16px;
+}
+
+.platform-result {
+  --platform-color: #38bdf8;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 50px 1fr auto;
+  padding: 16px;
+}
+
+.platform-result.nodeseek {
+  --platform-color: #38bdf8;
+}
+
+.platform-result.linuxdo {
+  --platform-color: #a78bfa;
+}
+
+.platform-result.v2ex {
+  --platform-color: #60a5fa;
+}
+
+.platform-result.naixi {
+  --platform-color: #f472b6;
+}
+
+.platform-result.success {
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.platform-result.skipped {
+  border-color: rgba(250, 204, 21, 0.22);
+}
+
+.platform-result.failed {
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+.platform-result-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--platform-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--platform-color) 45%, transparent);
+  border-radius: 16px;
+  color: color-mix(in srgb, var(--platform-color) 82%, white);
+  display: inline-flex;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+.platform-result-body {
+  display: grid;
+  gap: 5px;
+}
+
+.platform-result-body strong {
+  color: #f8fafc;
+  font-size: 17px;
+}
+
+.platform-result-body span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.platform-result-meta {
+  align-items: flex-end;
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.platform-status {
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 12px;
+}
+
+.platform-status.success {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+.platform-status.skipped {
+  background: rgba(250, 204, 21, 0.16);
+  color: #fde68a;
+}
+
+.platform-status.failed {
+  background: rgba(248, 113, 113, 0.17);
+  color: #fecaca;
+}
+
+.platform-status.running {
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+}
+
+.platform-status.pending {
+  background: rgba(148, 163, 184, 0.13);
+  color: #cbd5e1;
+}
+
+.platform-time {
+  color: #94a3b8;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.platform-divider {
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.28), transparent);
+  height: 1px;
+  margin: 12px 8px;
+}
+
 .log-card {
   padding: 0;
   overflow: hidden;
@@ -473,6 +602,15 @@ pre {
 }
 
 @media (max-width: 920px) {
+  .platform-result {
+    grid-template-columns: 46px 1fr;
+  }
+
+  .platform-result-meta {
+    grid-column: 1 / -1;
+    justify-items: start;
+  }
+
   .log-source {
     white-space: normal;
   }

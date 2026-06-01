@@ -26,8 +26,8 @@
       <span class="terminal-dot yellow"></span>
       <span class="terminal-dot green"></span>
       <div>
-        <strong>community-keeper.log</strong>
-        <span class="log-subtitle">实时任务输出</span>
+        <strong>签到结果</strong>
+        <span class="log-subtitle">只显示每个平台本次执行情况</span>
       </div>
     </div>
     <div class="log-meta">
@@ -110,164 +110,142 @@
     };
   }
 
-  const logGroups = [
-    { key: "system", title: "系统与调度", icon: "SYS", hint: "启动、调度、运行摘要" },
-    { key: "nodeseek", title: "NodeSeek", icon: "NS", hint: "签到、余额、账号信息" },
-    { key: "linuxdo", title: "LinuxDo", icon: "LD", hint: "登录、浏览、Connect" },
-    { key: "v2ex", title: "V2EX", icon: "VX", hint: "每日签到" },
-    { key: "naixi", title: "奶昔论坛", icon: "NX", hint: "每日签到" },
-    { key: "other", title: "其他日志", icon: "LOG", hint: "未归类输出" },
-  ];
-
-  function groupForLine(line, parsed) {
-    const text = `${parsed.source || ""} ${parsed.message || ""} ${line || ""}`.toLowerCase();
-    if (text.includes("runtime task summary")) {
-      return "system";
-    }
-    if (text.includes("nodeseek")) {
-      return "nodeseek";
-    }
-    if (text.includes("linuxdo")) {
-      return "linuxdo";
-    }
-    if (text.includes("v2ex")) {
-      return "v2ex";
-    }
-    if (text.includes("naixi") || text.includes("奶昔")) {
-      return "naixi";
-    }
-    if (
-      text.includes("scheduler")
-      || text.includes("runtime")
-      || text.includes("run.sh")
-      || text.includes("starting manual")
-      || text.includes("starting code")
-      || text.includes("display is empty")
-    ) {
-      return "system";
-    }
-    return "other";
-  }
-
-  function createLogRow(line, parsed) {
-    const row = document.createElement("div");
-    row.className = `log-line ${lineTone(line, parsed.level)}`;
-
-    const marker = document.createElement("span");
-    marker.className = "log-marker";
-
-    const content = document.createElement("div");
-    content.className = "log-entry-content";
-
-    const message = document.createElement("div");
-    message.className = "log-message";
-    message.textContent = prettyMessage(parsed.message || line);
-
-    const meta = document.createElement("div");
-    meta.className = "log-entry-meta";
-
-    const time = document.createElement("span");
-    time.className = "log-time";
-    time.textContent = formatTime(parsed.time);
-
-    const level = document.createElement("span");
-    level.className = `log-level ${lineTone(line, parsed.level)}`;
-    level.textContent = parsed.level || "LOG";
-
-    const source = document.createElement("span");
-    source.className = "log-source";
-    source.textContent = parsed.source || " ";
-
-    meta.append(time, level);
-    if (parsed.source) {
-      meta.appendChild(source);
-    }
-    content.append(message, meta);
-
-    row.append(marker, content);
-    return row;
-  }
-
   function formatTime(value) {
     if (!value) {
-      return "无时间";
+      return "";
     }
     const timePart = value.split(" ")[1] || value;
     return timePart.replace(/\.\d+$/, "");
   }
 
-  function prettyMessage(message) {
+  const platforms = [
+    { key: "nodeseek", name: "NodeSeek", icon: "NS", cookieName: "NODESEEK_COOKIE" },
+    { key: "linuxdo", name: "LinuxDo", icon: "LD", cookieName: "LINUXDO_COOKIES" },
+    { key: "v2ex", name: "V2EX", icon: "VX", cookieName: "V2EX_COOKIE" },
+    { key: "naixi", name: "奶昔论坛", icon: "NX", cookieName: "NAIXI_COOKIE" },
+  ];
+
+  function platformText(platform, line, parsed) {
+    return `${parsed.source || ""} ${parsed.message || ""} ${line || ""}`.toLowerCase();
+  }
+
+  function emptyStatus(platform) {
+    return {
+      platform,
+      state: "pending",
+      label: "未运行",
+      detail: "还没有看到这个平台的执行结果",
+      time: "",
+    };
+  }
+
+  function summarizePlatform(platform, parsedLines) {
+    const status = emptyStatus(platform);
+    for (const item of parsedLines) {
+      const text = platformText(platform, item.line, item.parsed);
+      if (!text.includes(platform.key) && !text.includes(platform.name.toLowerCase())) {
+        continue;
+      }
+      const message = item.parsed.message || item.line;
+      status.time = formatTime(item.parsed.time) || status.time;
+
+      if (text.includes("failed") || text.includes("失败") || text.includes("error")) {
+        status.state = "failed";
+        status.label = "失败";
+        status.detail = cleanDetail(message);
+      } else if (text.includes("skipped") || text.includes("跳过") || text.includes("未配置")) {
+        status.state = "skipped";
+        status.label = "已跳过";
+        status.detail = cleanDetail(message);
+      } else if (
+        text.includes("completed")
+        || text.includes("succeeded")
+        || text.includes("签到成功")
+        || text.includes("已完成签到")
+        || text.includes("今天已完成签到")
+      ) {
+        status.state = "success";
+        status.label = "已签到";
+        status.detail = cleanDetail(message);
+      } else if (text.includes("starting") || text.includes("开始执行")) {
+        status.state = status.state === "pending" ? "running" : status.state;
+        status.label = status.state === "running" ? "运行中" : status.label;
+        status.detail = status.state === "running" ? "正在执行任务" : status.detail;
+      }
+    }
+    return status;
+  }
+
+  function cleanDetail(message) {
     return message
-      .replace(/^Starting (.+) task$/, "开始执行 $1")
-      .replace(/^(.+) skipped: /, "$1 已跳过：")
-      .replace(/^(.+) completed: /, "$1 已完成：")
-      .replace(/^Runtime task summary: /, "本次运行摘要：")
-      .replace(/^Configured (\d+) NodeSeek account\(s\)$/, "已配置 $1 个 NodeSeek 账号")
-      .replace(/^NodeSeek accounts: /, "NodeSeek 账号：")
-      .replace(/^Starting NodeSeek daily mission for /, "开始执行 NodeSeek：")
-      .replace(/^NodeSeek attendance succeeded via browser: /, "NodeSeek 签到成功：")
-      .replace(/^Saved NODESEEK_COOKIE back to /, "已回写 NodeSeek Cookie：")
-      .replace(/^Saved browser cookies for /, "已保存浏览器 Cookie：")
-      .replace(/^Loaded NodeSeek credit summary via browser: /, "读取鸡腿摘要：")
-      .replace(/^Loaded NodeSeek profile summary via browser: /, "读取账号资料：")
-      .replace(/^Browser homepage: /, "浏览器首页：")
-      .replace(/^NodeSeek using browser for /, "使用浏览器执行账号：")
-      .replace(/^NodeSeek notification summary: /, "通知摘要：");
+      .replace(/^(.+) skipped: /, "")
+      .replace(/^(.+) completed: /, "")
+      .replace(/^NodeSeek attendance succeeded via browser: /, "")
+      .replace(/^(.+) failed: /, "")
+      .trim() || "已完成";
+  }
+
+  function renderPlatformStatus(status) {
+    const card = document.createElement("section");
+    card.className = `platform-result ${status.platform.key} ${status.state}`;
+
+    const icon = document.createElement("span");
+    icon.className = "platform-result-icon";
+    icon.textContent = status.platform.icon;
+
+    const body = document.createElement("div");
+    body.className = "platform-result-body";
+
+    const name = document.createElement("strong");
+    name.textContent = status.platform.name;
+
+    body.appendChild(name);
+    if (status.state === "failed") {
+      const detail = document.createElement("span");
+      detail.textContent = status.detail;
+      body.appendChild(detail);
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "platform-result-meta";
+
+    const label = document.createElement("span");
+    label.className = `platform-status ${status.state}`;
+    label.textContent = status.label;
+    meta.appendChild(label);
+
+    if (status.time) {
+      const time = document.createElement("span");
+      time.className = "platform-time";
+      time.textContent = status.time;
+      meta.appendChild(time);
+    }
+
+    card.append(icon, body, meta);
+    return card;
   }
 
   function renderLogs(text) {
     output.replaceChildren();
     const fragment = document.createDocumentFragment();
-    const buckets = new Map(logGroups.map((group) => [group.key, []]));
+    const parsedLines = text
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => ({ line, parsed: parseLine(line) }));
 
-    for (const line of text.split("\n")) {
-      const parsed = parseLine(line);
-      const groupKey = groupForLine(line, parsed);
-      buckets.get(groupKey).push({ line, parsed });
-    }
+    const title = document.createElement("div");
+    title.className = "platform-results-title";
+    title.textContent = "本次签到结果";
+    fragment.appendChild(title);
 
-    for (const group of logGroups) {
-      const entries = buckets.get(group.key).filter(({ line }) => line.trim());
-      if (!entries.length) {
-        continue;
+    platforms.forEach((platform, index) => {
+      fragment.appendChild(renderPlatformStatus(summarizePlatform(platform, parsedLines)));
+      if (index < platforms.length - 1) {
+        const divider = document.createElement("div");
+        divider.className = "platform-divider";
+        fragment.appendChild(divider);
       }
-
-      const section = document.createElement("section");
-      section.className = `log-section ${group.key}`;
-
-      const header = document.createElement("div");
-      header.className = "log-section-header";
-
-      const left = document.createElement("div");
-      left.className = "log-section-title";
-
-      const icon = document.createElement("span");
-      icon.className = "log-section-icon";
-      icon.textContent = group.icon;
-
-      const titleWrap = document.createElement("div");
-      const title = document.createElement("strong");
-      title.textContent = group.title;
-      const hint = document.createElement("span");
-      hint.textContent = group.hint;
-      titleWrap.append(title, hint);
-      left.append(icon, titleWrap);
-
-      const count = document.createElement("span");
-      count.className = "log-section-count";
-      count.textContent = `${entries.length} 条`;
-
-      header.append(left, count);
-      section.appendChild(header);
-
-      const body = document.createElement("div");
-      body.className = "log-section-body";
-      for (const entry of entries) {
-        body.appendChild(createLogRow(entry.line, entry.parsed));
-      }
-      section.appendChild(body);
-      fragment.appendChild(section);
-    }
+    });
 
     output.appendChild(fragment);
   }
