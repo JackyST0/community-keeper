@@ -17,6 +17,9 @@ services:
       PYTHON_BIN: /usr/local/bin/python
       PIP_BIN: /usr/local/bin/pip
       AUTO_UPDATE: "false"
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: "123456"
+      ADMIN_SESSION_SECRET: community-keeper-default-session-secret
       # If you access the console directly over HTTP, keep this false.
       # Change to true when it is behind HTTPS.
       ADMIN_COOKIE_SECURE: "true"
