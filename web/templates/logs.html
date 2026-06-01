@@ -25,14 +25,18 @@
       <span class="terminal-dot red"></span>
       <span class="terminal-dot yellow"></span>
       <span class="terminal-dot green"></span>
-      <span>community-keeper.log</span>
+      <div>
+        <strong>community-keeper.log</strong>
+        <span class="log-subtitle">实时任务输出</span>
+      </div>
     </div>
     <div class="log-meta">
       <span id="refresh-status" class="status-pill live">实时中</span>
       <span id="last-updated" class="muted">刚刚更新</span>
     </div>
   </div>
-  <div id="logs-output" class="logs" data-initial-logs="{{ logs | e }}"></div>
+  <div id="logs-output" class="logs"></div>
+  <script id="initial-logs" type="application/json">{{ logs | tojson }}</script>
 </section>
 
 <script>
@@ -42,13 +46,24 @@
   const linesInput = document.querySelector('input[name="lines"]');
   const refreshStatus = document.getElementById("refresh-status");
   const lastUpdated = document.getElementById("last-updated");
-  let lastText = output.dataset.initialLogs || "";
+  const initialLogs = document.getElementById("initial-logs");
+  let lastText = JSON.parse(initialLogs.textContent || '""');
 
   function scrollToBottom() {
     output.scrollTop = output.scrollHeight;
   }
 
-  function lineClass(line) {
+  function lineTone(line, level) {
+    const normalizedLevel = (level || "").toLowerCase();
+    if (normalizedLevel === "success") {
+      return "success";
+    }
+    if (normalizedLevel === "warning") {
+      return "warning";
+    }
+    if (normalizedLevel === "error") {
+      return "error";
+    }
     if (line.includes("| SUCCESS |") || line.includes(" succeeded")) {
       return "success";
     }
@@ -64,13 +79,62 @@
     return "plain";
   }
 
+  function parseLine(line) {
+    const loguruMatch = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\s+\|\s+([A-Z]+)\s+\|\s+(.+)$/);
+    if (loguruMatch) {
+      const detail = loguruMatch[3];
+      const sourceMatch = detail.match(/^([^:]+:\d+)\s+-\s+(.+)$/);
+      return {
+        time: loguruMatch[1],
+        level: loguruMatch[2],
+        source: sourceMatch ? sourceMatch[1] : "",
+        message: sourceMatch ? sourceMatch[2] : detail,
+      };
+    }
+
+    const bracketMatch = line.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s*(.*)$/);
+    if (bracketMatch) {
+      return {
+        time: bracketMatch[1],
+        level: "SYSTEM",
+        source: "runtime",
+        message: bracketMatch[2],
+      };
+    }
+
+    return {
+      time: "",
+      level: "",
+      source: "",
+      message: line,
+    };
+  }
+
   function renderLogs(text) {
     output.replaceChildren();
     const fragment = document.createDocumentFragment();
     for (const line of text.split("\n")) {
       const row = document.createElement("div");
-      row.className = `log-line ${lineClass(line)}`;
-      row.textContent = line || " ";
+      const parsed = parseLine(line);
+      row.className = `log-line ${lineTone(line, parsed.level)}`;
+
+      const time = document.createElement("span");
+      time.className = "log-time";
+      time.textContent = parsed.time || " ";
+
+      const level = document.createElement("span");
+      level.className = `log-level ${lineTone(line, parsed.level)}`;
+      level.textContent = parsed.level || "LOG";
+
+      const source = document.createElement("span");
+      source.className = "log-source";
+      source.textContent = parsed.source || " ";
+
+      const message = document.createElement("span");
+      message.className = "log-message";
+      message.textContent = parsed.message || " ";
+
+      row.append(time, level, source, message);
       fragment.appendChild(row);
     }
     output.appendChild(fragment);
