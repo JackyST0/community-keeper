@@ -199,14 +199,24 @@
   }
 
   function nodeSeekSummary(message) {
+    const account = firstMatch(message, /account=([^,]+)/);
     const todayReward = firstMatch(message, /today_reward=([^,\s]+)/);
     const currentBalance = firstMatch(message, /current_balance=([^,\s]+)/)
       || firstMatch(message, /'chicken_legs':\s*([^,}]+)/);
     const currentStreak = firstMatch(message, /current_streak=([^,\s]+)/);
     const totalSignins = firstMatch(message, /total_signins=([^,\s]+)/);
     const level = firstMatch(message, /'level':\s*([^,}]+)/);
+    const stardust = firstMatch(message, /'stardust':\s*([^,}]+)/);
+    const topics = firstMatch(message, /'topics':\s*([^,}]+)/);
+    const comments = firstMatch(message, /'comments':\s*([^,}]+)/);
+    const fans = firstMatch(message, /'fans':\s*([^,}]+)/);
+    const notifications = firstMatch(message, /'notifications':\s*([^,}]+)/);
+    const collections = firstMatch(message, /'collections':\s*([^,}]+)/);
 
     const parts = [];
+    if (account && account !== "None") {
+      parts.push(`账号 ${account}`);
+    }
     if (todayReward && todayReward !== "None") {
       parts.push(`今日获得 ${todayReward} 鸡腿`);
     }
@@ -222,7 +232,25 @@
     if (level && level !== "None") {
       parts.push(`等级 ${level}`);
     }
-    return parts.join("，");
+    if (stardust && stardust !== "None") {
+      parts.push(`星辰 ${stardust}`);
+    }
+    if (topics && topics !== "None") {
+      parts.push(`主题 ${topics}`);
+    }
+    if (comments && comments !== "None") {
+      parts.push(`评论 ${comments}`);
+    }
+    if (fans && fans !== "None") {
+      parts.push(`粉丝 ${fans}`);
+    }
+    if (notifications && notifications !== "None") {
+      parts.push(`通知 ${notifications}`);
+    }
+    if (collections && collections !== "None") {
+      parts.push(`收藏 ${collections}`);
+    }
+    return parts.join("；");
   }
 
   function renderPlatformStatus(status) {
