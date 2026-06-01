@@ -153,10 +153,11 @@ class NaixiForumTask:
         return response.text
 
     @staticmethod
-    def wait_for_cloudflare(browser, max_wait: int = 60) -> bool:
+    def wait_for_cloudflare(browser, max_wait: int = 60, stage: str = "页面") -> bool:
         import time
 
         waited = 0
+        logger.info(f"Naixi {stage}: 等待安全检查，最多 {max_wait} 秒")
         while waited < max_wait:
             title = str(getattr(browser, "title", "") or "").lower()
             url = str(getattr(browser, "url", "") or "").lower()
@@ -168,9 +169,12 @@ class NaixiForumTask:
                 or "checking your browser" in html
             )
             if not is_challenge:
+                logger.info(f"Naixi {stage}: 安全检查已通过")
                 return True
             time.sleep(2)
             waited += 2
+            if waited % 10 == 0:
+                logger.info(f"Naixi {stage}: 仍在等待安全检查，已等待 {waited} 秒")
         return False
 
     def build_browser(self):
@@ -190,16 +194,28 @@ class NaixiForumTask:
                 "Chrome/136.0.0.0 Safari/537.36"
             )
         )
+        logger.info("Naixi 正在启动 Chromium 浏览器")
         return ChromiumPage(co)
 
     def fetch_sign_page_via_browser(self, browser) -> str:
+        logger.info("Naixi 正在打开签到页面")
         browser.get(self.sign_page_url, timeout=45)
-        if not self.wait_for_cloudflare(browser):
+        logger.info(
+            f"Naixi 签到页面已打开: title={str(getattr(browser, 'title', '') or '')[:60]}"
+        )
+        if not self.wait_for_cloudflare(browser, stage="签到页面"):
             raise RuntimeError("浏览器仍停留在安全检查页面，请稍后重试")
         return str(getattr(browser, "html", "") or "")
 
+    def prime_browser_cookies(self, browser) -> None:
+        logger.info("Naixi 正在打开论坛首页以初始化浏览器上下文")
+        browser.get(self.base_url, timeout=45)
+        logger.info("Naixi 正在注入完整 Cookie，包括 cf_clearance")
+        browser.set.cookies(self.parse_cookie_string(self.cookie, include_ip_bound=True))
+
     def execute_sign_via_browser(self, browser, sign_href: str) -> str:
         sign_url = urljoin(self.base_url, sign_href)
+        logger.info("Naixi 正在浏览器会话内请求签到接口")
         js_code = (
             "return (async () => {"
             f"  const resp = await fetch({json.dumps(sign_url)}, {{"
@@ -227,14 +243,8 @@ class NaixiForumTask:
         browser = None
         try:
             browser = self.build_browser()
-            browser.get(self.base_url, timeout=45)
-            if not self.wait_for_cloudflare(browser):
-                detail = "浏览器未通过安全检查，请稍后重试"
-                self.send_failure_notification(detail)
-                return TaskResult.fail(self.name, detail)
-
-            # cf_clearance and lip are IP-bound; keep the browser's fresh clearance.
-            browser.set.cookies(self.parse_cookie_string(self.cookie, include_ip_bound=False))
+            logger.info("Naixi Chromium 浏览器已启动")
+            self.prime_browser_cookies(browser)
             html = self.fetch_sign_page_via_browser(browser)
             summary = self.parse_sign_summary(html)
             if not summary.get("username"):

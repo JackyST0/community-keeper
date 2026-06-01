@@ -126,7 +126,7 @@ def process_is_running(pid: int) -> bool:
     cmdline = process_cmdline(pid)
     if cmdline:
         return TASK_PROCESS_MARKER in cmdline
-    return True
+    return False
 
 
 def clear_stale_pid() -> None:
