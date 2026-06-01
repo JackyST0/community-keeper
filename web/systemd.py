@@ -22,6 +22,7 @@ SCHEDULER_ENABLED_FILE = Path(
 SCHEDULER_STATE_FILE = Path(
     os.environ.get("COMMUNITY_KEEPER_SCHEDULER_STATE_FILE", "/tmp/community-keeper-scheduler.state")
 )
+TASK_PROCESS_MARKER = "community-keeper-task-runner"
 
 
 @dataclass
@@ -98,6 +99,13 @@ def read_pid() -> int:
         return 0
 
 
+def process_cmdline(pid: int) -> str:
+    try:
+        return Path(f"/proc/{pid}/cmdline").read_text(encoding="utf-8", errors="replace").replace("\x00", " ")
+    except OSError:
+        return ""
+
+
 def process_is_running(pid: int) -> bool:
     if pid <= 0:
         return False
@@ -105,6 +113,9 @@ def process_is_running(pid: int) -> bool:
         os.kill(pid, 0)
     except OSError:
         return False
+    cmdline = process_cmdline(pid)
+    if cmdline:
+        return TASK_PROCESS_MARKER in cmdline
     return True
 
 
@@ -127,9 +138,38 @@ def start_process_task(args: List[str], label: str) -> CommandResult:
     PID_FILE.parent.mkdir(parents=True, exist_ok=True)
     append_log(f"Starting {label}")
     log_handle = LOG_FILE.open("a", encoding="utf-8")
+    wrapper_script = """
+label="$1"
+run_script="$2"
+log_file="$3"
+pid_file="$4"
+shift 4
+
+/usr/bin/env bash "$run_script" "$@"
+exit_code=$?
+timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+if [ "$exit_code" -eq 0 ]; then
+  printf '\\n[%s] %s 运行结束：成功。\\n' "$timestamp" "$label" >> "$log_file"
+else
+  printf '\\n[%s] %s 运行结束：失败，退出码 %s。\\n' "$timestamp" "$label" "$exit_code" >> "$log_file"
+fi
+rm -f "$pid_file"
+exit "$exit_code"
+""".strip()
     try:
         process = subprocess.Popen(
-            ["/usr/bin/env", "bash", RUN_SCRIPT, *args],
+            [
+                "/usr/bin/env",
+                "bash",
+                "-c",
+                wrapper_script,
+                TASK_PROCESS_MARKER,
+                label,
+                RUN_SCRIPT,
+                str(LOG_FILE),
+                str(PID_FILE),
+                *args,
+            ],
             cwd=INSTALL_DIR,
             env=merged_env(),
             stdout=log_handle,
@@ -140,6 +180,7 @@ def start_process_task(args: List[str], label: str) -> CommandResult:
         log_handle.close()
         return CommandResult(False, str(exc))
 
+    log_handle.close()
     PID_FILE.write_text(str(process.pid), encoding="utf-8")
     return CommandResult(True, f"{label} started, pid={process.pid}")
 
