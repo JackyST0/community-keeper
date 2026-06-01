@@ -121,34 +121,17 @@ if PRELOADED_ENV_FILES:
 
 
 ENV_FILE_PATH = env_str("LINUXDO_ENV_FILE", resolve_default_env_file_path())
-USERNAME = env_str("LINUXDO_USERNAME") or env_str("USERNAME")
-PASSWORD = env_str("LINUXDO_PASSWORD") or env_str("PASSWORD")
 COOKIES = env_str("LINUXDO_COOKIES")
 LINUXDO_HEADLESS = env_bool("LINUXDO_HEADLESS", False)
 DEFAULT_IMPERSONATE = env_str("IMPERSONATE_VERSION", "chrome136") or "chrome136"
 
-V2EX_COOKIE = env_str("V2EX_COOKIE") or env_str("V2EX_COOKIES")
-V2EX_A2 = env_str("V2EX_A2")
-if not V2EX_COOKIE and V2EX_A2:
-    V2EX_COOKIE = f"A2={V2EX_A2}"
-V2EX_ENABLED = env_bool("V2EX_ENABLED", bool(V2EX_COOKIE))
+V2EX_COOKIE = env_str("V2EX_COOKIE")
 
-NODESEEK_NAME = env_str("NODESEEK_NAME")
-NODESEEK_COOKIE = env_str("NODESEEK_COOKIE") or env_str("NS_COOKIE")
-NODESEEK_RANDOM = env_bool("NODESEEK_RANDOM", env_bool("NS_RANDOM", True))
-NODESEEK_HEADLESS = env_bool("NODESEEK_HEADLESS", True)
-NODESEEK_IMPERSONATE = (
-    env_str("NODESEEK_IMPERSONATE")
-    or env_str("NS_IMPERSONATE")
-    or DEFAULT_IMPERSONATE
-)
-NODESEEK_ACCOUNT_DELAY_SECONDS = env_int("NODESEEK_ACCOUNT_DELAY_SECONDS", 300)
+NODESEEK_COOKIE = env_str("NODESEEK_COOKIE")
+NODESEEK_ACCOUNT_DELAY_SECONDS = 300
 
 NODESEEK_INDEXED_ENV_PATTERN = re.compile(
-    r"^(?:"
-    r"NODESEEK_(?:COOKIE|NAME|RANDOM|HEADLESS|IMPERSONATE)"
-    r"|NS_(?:COOKIE|RANDOM|IMPERSONATE)"
-    r")_(\d+)$"
+    r"^NODESEEK_COOKIE_(\d+)$"
 )
 
 
@@ -217,18 +200,15 @@ def build_nodeseek_account_config(index: Optional[int] = None) -> Optional[Dict[
     cookie = indexed_env_str(
         "NODESEEK_COOKIE",
         index,
-        aliases=["NS_COOKIE"],
         default=NODESEEK_COOKIE if index is None else "",
     )
     if not cookie:
         return None
 
-    account_name = indexed_env_str("NODESEEK_NAME", index, default="")
-    if not account_name:
-        if index is not None:
-            account_name = f"Account #{index}"
-        else:
-            account_name = "Default account"
+    if index is not None:
+        account_name = f"Account #{index}"
+    else:
+        account_name = "Default account"
 
     return {
         "index": index,
@@ -237,25 +217,10 @@ def build_nodeseek_account_config(index: Optional[int] = None) -> Optional[Dict[
         "cookie_env_var_name": indexed_env_name_with_value(
             "NODESEEK_COOKIE",
             index,
-            aliases=["NS_COOKIE"],
         ),
-        "attendance_random": indexed_env_bool(
-            "NODESEEK_RANDOM",
-            index,
-            default=NODESEEK_RANDOM,
-            aliases=["NS_RANDOM"],
-        ),
-        "headless": indexed_env_bool(
-            "NODESEEK_HEADLESS",
-            index,
-            default=NODESEEK_HEADLESS,
-        ),
-        "impersonate": indexed_env_str(
-            "NODESEEK_IMPERSONATE",
-            index,
-            aliases=["NS_IMPERSONATE"],
-            default=NODESEEK_IMPERSONATE,
-        ),
+        "attendance_random": True,
+        "headless": True,
+        "impersonate": DEFAULT_IMPERSONATE,
     }
 
 
@@ -280,11 +245,8 @@ def collect_nodeseek_accounts() -> List[Dict[str, object]]:
     return accounts
 
 
-NODESEEK_ENABLED = env_bool("NODESEEK_ENABLED", bool(collect_nodeseek_accounts()))
-
-
 def has_linuxdo_credentials() -> bool:
-    return bool(COOKIES or (USERNAME and PASSWORD))
+    return bool(COOKIES)
 
 
 def load_linuxdo_cloak_module():
@@ -327,16 +289,16 @@ def run_linuxdo_task() -> bool:
 
 def run_configured_tasks() -> None:
     linuxdo_enabled = has_linuxdo_credentials()
-    has_v2ex_credentials = bool(V2EX_ENABLED and V2EX_COOKIE)
-    nodeseek_accounts = collect_nodeseek_accounts() if NODESEEK_ENABLED else []
-    has_nodeseek_credentials = bool(NODESEEK_ENABLED and nodeseek_accounts)
+    has_v2ex_credentials = bool(V2EX_COOKIE)
+    nodeseek_accounts = collect_nodeseek_accounts()
+    has_nodeseek_credentials = bool(nodeseek_accounts)
     naixi_task = NaixiForumTask()
 
     logger.info(
         "Runtime task summary: "
         f"linuxdo={linuxdo_enabled}, "
         f"v2ex={has_v2ex_credentials}, "
-        f"nodeseek_enabled={NODESEEK_ENABLED}, "
+        f"nodeseek={has_nodeseek_credentials}, "
         f"nodeseek_accounts={len(nodeseek_accounts)}, "
         f"naixi={naixi_task.is_configured()}"
     )
@@ -353,10 +315,10 @@ def run_configured_tasks() -> None:
         and not naixi_task.is_configured()
     ):
         print(
-            "请设置 LINUXDO_COOKIES 或 LINUXDO_USERNAME / LINUXDO_PASSWORD；"
-            "如需启用 V2EX，请设置 V2EX_COOKIE 或 V2EX_A2；"
+            "请设置 LINUXDO_COOKIES；"
+            "如需启用 V2EX，请设置 V2EX_COOKIE；"
             "如需启用 NodeSeek，请设置 NODESEEK_COOKIE；"
-            "如需启用奶昔论坛，请先设置 NAIXI_ENABLED=true 或 NAIXI_COOKIE"
+            "如需启用奶昔论坛，请设置 NAIXI_COOKIE"
         )
         raise SystemExit(1)
 
@@ -378,7 +340,7 @@ def run_configured_tasks() -> None:
                 name="linuxdo",
                 enabled=linuxdo_enabled,
                 action=run_linuxdo_task,
-                skip_detail="未配置 LinuxDo 登录信息，跳过 LinuxDo 任务",
+                skip_detail="未配置 LinuxDo Cookie，跳过 LinuxDo 任务",
             ),
             naixi_task,
         ]

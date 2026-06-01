@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<form method="post" action="/config" class="config-form">
+<form method="post" action="/config" class="config-form" autocomplete="off">
   {% for group in groups %}
     <section class="card">
       <h2>{{ group.name }}</h2>
@@ -23,6 +23,7 @@
               <input
                 name="{{ field.key }}"
                 type="{% if field.secret %}password{% else %}text{% endif %}"
+                autocomplete="off"
                 value="{% if not field.secret %}{{ value }}{% endif %}"
                 placeholder="{% if field.secret and value %}当前值：{{ mask_value(value) }}{% else %}{{ field.placeholder }}{% endif %}">
             {% endif %}
@@ -35,9 +36,9 @@
   <section class="card">
     <h2>额外 NodeSeek 多账号变量</h2>
     <p class="muted">
-      可添加形如 <code>NODESEEK_COOKIE_1=...</code>、<code>NODESEEK_NAME_2=...</code> 的变量。
+      可添加形如 <code>NODESEEK_COOKIE_1=...</code>、<code>NODESEEK_COOKIE_2=...</code> 的变量。
     </p>
-    <textarea name="extra_env" rows="8" placeholder="NODESEEK_NAME_1=main&#10;NODESEEK_COOKIE_1=nodepay_session=xxx"></textarea>
+    <textarea name="extra_env" rows="8" placeholder="NODESEEK_COOKIE_1=nodepay_session=xxx&#10;NODESEEK_COOKIE_2=nodepay_session=yyy"></textarea>
   </section>
 
   <div class="sticky-actions">

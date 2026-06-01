@@ -78,7 +78,7 @@ def template_context(request: Request, **kwargs):
 def indexed_nodeseek_fields(values: Dict[str, str]) -> List[env_store.EnvField]:
     fields: List[env_store.EnvField] = []
     for key in sorted(values):
-        if not key.startswith("NODESEEK_") or not key.rsplit("_", 1)[-1].isdigit():
+        if not key.startswith("NODESEEK_COOKIE_") or not key.rsplit("_", 1)[-1].isdigit():
             continue
         if key in env_store.FIELD_MAP:
             continue
@@ -112,16 +112,7 @@ def allowed_extra_key(key: str) -> bool:
     if "_" not in key or not key.rsplit("_", 1)[-1].isdigit():
         return False
     base_name = key.rsplit("_", 1)[0]
-    return base_name in {
-        "NODESEEK_NAME",
-        "NODESEEK_COOKIE",
-        "NODESEEK_RANDOM",
-        "NODESEEK_HEADLESS",
-        "NODESEEK_IMPERSONATE",
-        "NS_COOKIE",
-        "NS_RANDOM",
-        "NS_IMPERSONATE",
-    }
+    return base_name == "NODESEEK_COOKIE"
 
 
 def parse_extra_env(raw: str) -> Dict[str, str]:

@@ -291,10 +291,7 @@ class YesCaptchaSolver:
 
 os.environ.pop("DYLD_LIBRARY_PATH", None)
 
-USERNAME = env_str("LINUXDO_USERNAME") or env_str("USERNAME")
-PASSWORD = env_str("LINUXDO_PASSWORD") or env_str("PASSWORD")
 COOKIES = env_str("LINUXDO_COOKIES")
-SKIP_COOKIE_LOGIN = env_bool("LINUXDO_SKIP_COOKIE_LOGIN", False)
 GH_PAT = env_str("GH_PAT")
 ENV_FILE_PATH = env_str("LINUXDO_ENV_FILE", resolve_default_env_file_path())
 USER_DATA_DIR = env_str("LINUXDO_USER_DATA_DIR")
@@ -762,7 +759,7 @@ class LinuxDoCloakBrowser:
             }
         )
         self.notifier = notifier or NotificationManager()
-        self.login_name = USERNAME or "Cookie 用户"
+        self.login_name = "Cookie 用户"
         self.login_method = ""
         self.login_verified = False
         self.login_verify_source = ""
@@ -1246,7 +1243,7 @@ async () => {{
         return self.validate_login()
 
     def login(self) -> Tuple[bool, Dict[str, object]]:
-        if COOKIES and not SKIP_COOKIE_LOGIN:
+        if COOKIES:
             self.login_method = "cookie"
             logger.info("尝试使用 Cookie 登录")
             ok, state = self.try_cookie_login(COOKIES)
@@ -1255,22 +1252,10 @@ async () => {{
                 if cookie_str:
                     self.persist_cookie_if_possible(cookie_str)
                 return ok, state
-            logger.warning("Cookie 登录失败，继续回退账号密码登录")
-        elif COOKIES and SKIP_COOKIE_LOGIN:
-            logger.info("已按配置跳过 Cookie 登录，直接进入账号密码登录流程")
-
-        if USERNAME and PASSWORD:
-            self.login_method = "password"
-            logger.info("尝试使用账号密码登录")
-            ok, state = self.try_password_login(USERNAME, PASSWORD)
-            if ok:
-                cookie_str = self.sync_session_from_context()
-                if cookie_str:
-                    self.persist_cookie_if_possible(cookie_str)
-                return ok, state
+            logger.warning("Cookie 登录失败，请更新 LINUXDO_COOKIES")
             return ok, state
 
-        logger.warning("未配置可用的 LinuxDo 登录凭据")
+        logger.warning("未配置 LinuxDo Cookie")
         return False, {}
 
     def extract_topic_urls_from_current_page(self) -> List[str]:
@@ -2080,22 +2065,11 @@ def run_login_smoke_test(
     browser = LinuxDoCloakBrowser(headless=headless, user_data_dir=user_data_dir)
     result = None
     try:
-        if COOKIES and not SKIP_COOKIE_LOGIN:
+        if COOKIES:
             browser.login_method = "cookie"
             logger.info("[flow] trying cookie login")
             ok, state = browser.try_cookie_login(COOKIES)
             result = build_result(ok, "cookie", state, screenshot_path, loaded_envs)
-            if ok:
-                print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
-                return 0
-        elif COOKIES and SKIP_COOKIE_LOGIN:
-            logger.info("[flow] skip cookie login by configuration")
-
-        if USERNAME and PASSWORD:
-            browser.login_method = "password"
-            logger.info("[flow] trying password login")
-            ok, state = browser.try_password_login(USERNAME, PASSWORD)
-            result = build_result(ok, "password", state, screenshot_path, loaded_envs)
             if ok:
                 print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
                 return 0
@@ -2113,7 +2087,7 @@ def run_login_smoke_test(
 
 
 def has_linuxdo_credentials() -> bool:
-    return bool(COOKIES or (USERNAME and PASSWORD))
+    return bool(COOKIES)
 
 
 def run_linuxdo_task(headless: bool = False, user_data_dir: str = "") -> bool:
@@ -2148,7 +2122,7 @@ def main() -> int:
         )
 
     if not has_linuxdo_credentials():
-        print("Need LINUXDO_COOKIES or LINUXDO_USERNAME/LINUXDO_PASSWORD", file=sys.stderr)
+        print("Need LINUXDO_COOKIES", file=sys.stderr)
         return 2
 
     return 0 if run_linuxdo_task(headless=headless, user_data_dir=args.user_data_dir or USER_DATA_DIR) else 1

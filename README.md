@@ -106,7 +106,7 @@ admin
 
 1. 在青龙面板添加本仓库订阅，或把项目文件放到青龙脚本目录
 2. 在依赖管理里安装 `requirements.txt` 中的 Python 依赖
-3. 在环境变量里配置需要的平台 Cookie，例如 `LINUXDO_COOKIES`、`NODESEEK_COOKIE`、`V2EX_A2`、`NAIXI_COOKIE`
+3. 在环境变量里配置需要的平台 Cookie，例如 `LINUXDO_COOKIES`、`NODESEEK_COOKIE`、`V2EX_COOKIE`、`NAIXI_COOKIE`
 4. 运行 `python3 main.py`
 
 如果青龙容器内没有 Chrome / Chromium，LinuxDo 和 NodeSeek 的浏览器回退能力可能不可用；Cookie 有效时优先走 Cookie 模式。
@@ -117,65 +117,37 @@ admin
 
 | 变量名 | 用途 | 说明 |
 | --- | --- | --- |
-| `LINUXDO_COOKIES` | LinuxDo Cookie 字符串 | 推荐配置 |
-| `LINUXDO_USERNAME` | LinuxDo 用户名或邮箱 | 可选，Cookie 失效后的回退登录 |
-| `LINUXDO_PASSWORD` | LinuxDo 密码 | 可选，Cookie 失效后的回退登录 |
-| `BROWSE_ENABLED` | 是否执行浏览任务 | 默认 `true` |
-| `LINUXDO_HEADLESS` | 是否无头运行 LinuxDo 浏览器 | 默认 `false` |
-| `LINUXDO_ENV_FILE` | 本地 env 文件路径 | 默认 `/etc/community-keeper.env` |
-| `LINUXDO_USER_DATA_DIR` | CloakBrowser 持久化资料目录 | 可选，用于复用浏览器登录态 |
-| `LINUXDO_SOLVER_TYPE` | 验证码方案 | 当前使用 `yescaptcha` |
-| `CLIENT_KEY` | LinuxDo YesCaptcha key | 可选，兼容旧名 `CLIENTT_KEY` |
-| `LINUXDO_YESCAPTCHA_API_BASE_URL` | YesCaptcha 接口地址 | 默认 `https://api.yescaptcha.com` |
-| `LINUXDO_YESCAPTCHA_ADVANCED` | YesCaptcha 高级模式 | 可选，默认关闭 |
-| `LINUXDO_YESCAPTCHA_HCAPTCHA_MAX_RETRIES` | LinuxDo hCaptcha 最大轮询次数 | 可选，默认 `45` |
-| `LINUXDO_YESCAPTCHA_HCAPTCHA_RETRY_INTERVAL` | LinuxDo hCaptcha 轮询间隔（秒） | 可选，默认 `4` |
-| `LINUXDO_YESCAPTCHA_HCAPTCHA_TIMEOUT` | LinuxDo hCaptcha 单次请求超时（秒） | 可选，默认 `600` |
+| `LINUXDO_COOKIES` | LinuxDo Cookie 字符串 | 必填，LinuxDo 仅使用 Cookie 执行 |
 
 说明：
 
-- 第一版建议只配置 `LINUXDO_COOKIES`，先观察 Cookie 实际过期周期
-- 如果同时配置了 `LINUXDO_COOKIES` 和账号密码，会优先使用 Cookie
-- Cookie 失效后才会尝试账号密码登录；验证码场景需要额外配置 YesCaptcha
-- 如果配置 `LINUXDO_USER_DATA_DIR`，LinuxDo 会复用同一个 CloakBrowser profile，有助于降低频繁复制 Cookie 带来的登录态不稳定
-- 如果设置 `LINUXDO_HEADLESS=true`，`main.py` 会以无头模式运行 LinuxDo；遇到 Cloudflare / 验证码不稳定时可临时改回有头模式排查
-- LinuxDo 的 hCaptcha 默认会按 `45` 次重试、每次间隔 `4` 秒、单次请求超时 `600` 秒执行，不配置也会生效
+- LinuxDo 只使用 `LINUXDO_COOKIES` 执行，不再支持账号密码回退登录
 - LinuxDo 默认有头运行；如果 `DISPLAY` 为空且未设置 `LINUXDO_HEADLESS=true`，`scripts/run.sh` 会自动使用 `xvfb-run`
 
 ### V2EX
 
 | 变量名 | 用途 | 说明 |
 | --- | --- | --- |
-| `V2EX_ENABLED` | 是否启用 V2EX 任务 | 默认会根据 Cookie 自动判断 |
-| `V2EX_COOKIE` | 完整 Cookie 字符串 | 优先级高于 `V2EX_A2` |
-| `V2EX_A2` | 只提供 `A2` Cookie | 更简洁的写法 |
+| `V2EX_COOKIE` | V2EX Cookie 字符串 | 配置后自动执行 |
 
 ### NodeSeek
 
 | 变量名 | 用途 | 说明 |
 | --- | --- | --- |
-| `NODESEEK_ENABLED` | 是否启用 NodeSeek 任务 | 默认会根据账号配置自动判断 |
-| `NODESEEK_RANDOM` | 签到接口是否附带随机参数 | 默认 `true` |
-| `NODESEEK_HEADLESS` | NodeSeek 浏览器是否无头运行 | 默认 `true`，本地排查可设为 `false` |
-| `NODESEEK_IMPERSONATE` | 请求指纹 | 默认 `chrome136` |
-| `NODESEEK_ACCOUNT_DELAY_SECONDS` | 多账号之间的等待秒数 | 默认 `300`，可设为 `0` 关闭 |
-
-单账号配置：
-
-| 变量名 | 用途 | 说明 |
-| --- | --- | --- |
-| `NODESEEK_NAME` | 通知中的账号名 | 可选 |
-| `NODESEEK_COOKIE` | NodeSeek Cookie | 推荐配置 |
+| `NODESEEK_COOKIE` | NodeSeek Cookie | 配置后自动执行 |
 
 多账号配置使用编号变量，例如：
 
 ```env
-NODESEEK_NAME_1=main
 NODESEEK_COOKIE_1=nodepay_session=account1_cookie
-
-NODESEEK_NAME_2=backup
 NODESEEK_COOKIE_2=nodepay_session=account2_cookie
 ```
+
+### 奶昔论坛
+
+| 变量名 | 用途 | 说明 |
+| --- | --- | --- |
+| `NAIXI_COOKIE` | 奶昔论坛 Cookie 字符串 | 配置后自动执行 |
 
 ### 通知
 
@@ -210,16 +182,9 @@ NODESEEK_COOKIE_2=nodepay_session=account2_cookie
 
 ```env
 LINUXDO_COOKIES=_t=xxx; _forum_session=yyy; cf_clearance=zzz
-# 可选：Cookie 失效后的账号密码回退
-# LINUXDO_USERNAME=your_username_or_email
-# LINUXDO_PASSWORD=your_password
 
-V2EX_ENABLED=true
-V2EX_A2=your_v2ex_a2
+V2EX_COOKIE=A2=xxx
 
-NODESEEK_ENABLED=true
-NODESEEK_HEADLESS=true
-NODESEEK_NAME=main
 NODESEEK_COOKIE=nodepay_session=xxx
 
 NAIXI_COOKIE=naixi_6720_saltkey=xxx; naixi_6720_auth=yyy; cf_clearance=zzz
@@ -233,12 +198,11 @@ NOTIFY_TIMEZONE=Asia/Shanghai
 
 ### LinuxDo
 
-1. 优先使用 `LINUXDO_COOKIES`
-2. 如果 Cookie 失效，且配置了账号密码，则尝试账号密码登录
-3. 登录成功后校验账号页登录状态
-4. 默认执行浏览任务；如果显式设置 `BROWSE_ENABLED=false`，则跳过浏览任务
-5. 读取 Connect 信息
-6. 发送通知
+1. 使用 `LINUXDO_COOKIES` 登录
+2. 登录成功后校验账号页登录状态
+3. 默认执行浏览任务
+4. 读取 Connect 信息
+5. 发送通知
 
 ### V2EX
 

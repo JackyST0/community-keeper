@@ -19,13 +19,12 @@ class NaixiForumTask:
     name = "naixi"
 
     def __init__(self, notifier: Optional[NotificationManager] = None) -> None:
-        self.enabled = self.env_bool("NAIXI_ENABLED", False)
         self.cookie = self.env_str("NAIXI_COOKIE") or self.env_str("NAIXI_COOKIES")
-        self.base_url = self.env_str("NAIXI_BASE_URL", DEFAULT_BASE_URL) or DEFAULT_BASE_URL
+        self.base_url = DEFAULT_BASE_URL
         if not self.base_url.endswith("/"):
             self.base_url += "/"
-        self.impersonate = self.env_str("NAIXI_IMPERSONATE", "chrome136") or "chrome136"
-        self.timeout = self.env_int("NAIXI_TIMEOUT", 25)
+        self.impersonate = "chrome136"
+        self.timeout = 25
         self.notifier = notifier or NotificationManager()
 
     @staticmethod
@@ -33,26 +32,8 @@ class NaixiForumTask:
         value = os.environ.get(name, default)
         return value.strip() if isinstance(value, str) else default
 
-    @staticmethod
-    def env_bool(name: str, default: bool = False) -> bool:
-        value = NaixiForumTask.env_str(name)
-        if not value:
-            return default
-        return value.lower() in {"1", "true", "yes", "on"}
-
-    @staticmethod
-    def env_int(name: str, default: int) -> int:
-        value = NaixiForumTask.env_str(name)
-        if not value:
-            return default
-        try:
-            return int(value)
-        except ValueError:
-            logger.warning(f"环境变量 {name} 不是有效整数: {value!r}，将回退到 {default}")
-            return default
-
     def is_configured(self) -> bool:
-        return bool(self.enabled or self.cookie)
+        return bool(self.cookie)
 
     def build_session(self):
         session = requests.Session()
@@ -170,8 +151,6 @@ class NaixiForumTask:
     def run(self) -> TaskResult:
         if not self.is_configured():
             return TaskResult.skip(self.name, "未配置奶昔论坛，跳过")
-        if not self.cookie:
-            return TaskResult.fail(self.name, "已启用奶昔论坛，但未设置 NAIXI_COOKIE")
 
         try:
             session = self.build_session()

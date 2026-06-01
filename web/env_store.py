@@ -27,40 +27,24 @@ FIELD_GROUPS: List[Dict[str, object]] = [
         "name": "LinuxDo",
         "fields": [
             EnvField("LINUXDO_COOKIES", "Cookie", "LinuxDo", True, True),
-            EnvField("LINUXDO_USERNAME", "用户名/邮箱", "LinuxDo"),
-            EnvField("LINUXDO_PASSWORD", "密码", "LinuxDo", True),
-            EnvField("BROWSE_ENABLED", "启用浏览任务", "LinuxDo", False, False, "true / false"),
-            EnvField("LINUXDO_HEADLESS", "无头浏览器", "LinuxDo", False, False, "true / false"),
-            EnvField("LINUXDO_USER_DATA_DIR", "浏览器资料目录", "LinuxDo"),
         ],
     },
     {
         "name": "V2EX",
         "fields": [
-            EnvField("V2EX_ENABLED", "启用 V2EX", "V2EX", False, False, "true / false"),
-            EnvField("V2EX_A2", "A2 Cookie", "V2EX", True),
-            EnvField("V2EX_COOKIE", "完整 Cookie", "V2EX", True, True),
+            EnvField("V2EX_COOKIE", "Cookie", "V2EX", True, True),
         ],
     },
     {
         "name": "NodeSeek",
         "fields": [
-            EnvField("NODESEEK_ENABLED", "启用 NodeSeek", "NodeSeek", False, False, "true / false"),
-            EnvField("NODESEEK_NAME", "账号名", "NodeSeek"),
             EnvField("NODESEEK_COOKIE", "Cookie", "NodeSeek", True, True),
-            EnvField("NODESEEK_RANDOM", "随机签到参数", "NodeSeek", False, False, "true / false"),
-            EnvField("NODESEEK_HEADLESS", "无头浏览器", "NodeSeek", False, False, "true / false"),
-            EnvField("NODESEEK_IMPERSONATE", "请求指纹", "NodeSeek", False, False, "chrome136"),
-            EnvField("NODESEEK_ACCOUNT_DELAY_SECONDS", "多账号间隔秒数", "NodeSeek", False, False, "300"),
         ],
     },
     {
         "name": "奶昔论坛",
         "fields": [
-            EnvField("NAIXI_ENABLED", "启用奶昔", "奶昔论坛", False, False, "true / false"),
             EnvField("NAIXI_COOKIE", "Cookie", "奶昔论坛", True, True),
-            EnvField("NAIXI_BASE_URL", "站点地址", "奶昔论坛", False, False, "https://forum.naixi.net/"),
-            EnvField("NAIXI_IMPERSONATE", "请求指纹", "奶昔论坛", False, False, "chrome136"),
         ],
     },
     {
