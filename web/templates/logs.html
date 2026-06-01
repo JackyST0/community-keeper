@@ -114,8 +114,18 @@
     if (!value) {
       return "";
     }
-    const timePart = value.split(" ")[1] || value;
-    return timePart.replace(/\.\d+$/, "");
+    const normalized = value.replace(" ", "T").replace(/\.\d+$/, "");
+    const parsedAsUtc = new Date(`${normalized}Z`);
+    if (Number.isNaN(parsedAsUtc.getTime())) {
+      return (value.split(" ")[1] || value).replace(/\.\d+$/, "");
+    }
+    return new Intl.DateTimeFormat("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(parsedAsUtc);
   }
 
   const platforms = [
@@ -155,7 +165,7 @@
         }
       }
 
-      if (text.includes("failed") || text.includes("失败") || text.includes("error")) {
+      if (text.includes("failed") || text.includes("失败") || text.includes("error") || text.includes("returned false")) {
         status.state = "failed";
         status.label = "失败";
         status.detail = cleanDetail(message);
@@ -190,6 +200,7 @@
       .replace(/^(.+) completed: /, "")
       .replace(/^NodeSeek attendance succeeded via browser: /, "")
       .replace(/^(.+) failed: /, "")
+      .replace(/^(.+) returned false$/, "$1 返回失败")
       .trim() || "已完成";
   }
 
@@ -293,6 +304,47 @@
     return card;
   }
 
+  function taskIsRunning(parsedLines) {
+    const hasStarted = parsedLines.some(({ line }) => {
+      const text = line.toLowerCase();
+      return text.includes("starting manual run")
+        || text.includes("running main.py")
+        || text.includes("starting nodeseek task")
+        || text.includes("starting linuxdo task")
+        || text.includes("starting v2ex task")
+        || text.includes("starting naixi task");
+    });
+    const hasFinished = parsedLines.some(({ line }) => line.includes("运行结束"));
+    return hasStarted && !hasFinished;
+  }
+
+  function renderExecutionLogs(parsedLines) {
+    const panel = document.createElement("section");
+    panel.className = "execution-log-panel";
+
+    const title = document.createElement("div");
+    title.className = "execution-log-title";
+    title.textContent = "执行中日志";
+    panel.appendChild(title);
+
+    for (const item of parsedLines.slice(-80)) {
+      const row = document.createElement("div");
+      row.className = `execution-log-line ${lineTone(item.line, item.parsed.level)}`;
+
+      const time = document.createElement("span");
+      time.className = "execution-log-time";
+      time.textContent = formatTime(item.parsed.time) || "--:--:--";
+
+      const message = document.createElement("span");
+      message.className = "execution-log-message";
+      message.textContent = item.parsed.message || item.line;
+
+      row.append(time, message);
+      panel.appendChild(row);
+    }
+    return panel;
+  }
+
   function renderLogs(text) {
     output.replaceChildren();
     const fragment = document.createDocumentFragment();
@@ -315,6 +367,10 @@
         fragment.appendChild(divider);
       }
     });
+
+    if (taskIsRunning(parsedLines)) {
+      fragment.appendChild(renderExecutionLogs(parsedLines));
+    }
 
     output.appendChild(fragment);
   }
