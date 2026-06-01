@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}配置 - community-keeper{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>配置</h1>
+    <p class="muted">保存后会写入 <code>{{ env_file }}</code>。敏感项留空表示保持原值。</p>
+  </div>
+</section>
+
+<form method="post" action="/config" class="config-form">
+  {% for group in groups %}
+    <section class="card">
+      <h2>{{ group.name }}</h2>
+      <div class="fields">
+        {% for field in group.fields %}
+          {% set value = values.get(field.key, "") %}
+          <label>
+            <span>{{ field.label }} <code>{{ field.key }}</code></span>
+            {% if field.textarea %}
+              <textarea name="{{ field.key }}" rows="3" placeholder="{% if field.secret and value %}当前值：{{ mask_value(value) }}{% else %}{{ field.placeholder }}{% endif %}">{% if not field.secret %}{{ value }}{% endif %}</textarea>
+            {% else %}
+              <input
+                name="{{ field.key }}"
+                type="{% if field.secret %}password{% else %}text{% endif %}"
+                value="{% if not field.secret %}{{ value }}{% endif %}"
+                placeholder="{% if field.secret and value %}当前值：{{ mask_value(value) }}{% else %}{{ field.placeholder }}{% endif %}">
+            {% endif %}
+          </label>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+
+  <section class="card">
+    <h2>额外 NodeSeek 多账号变量</h2>
+    <p class="muted">
+      可添加形如 <code>NODESEEK_COOKIE_1=...</code>、<code>NODESEEK_NAME_2=...</code> 的变量。
+    </p>
+    <textarea name="extra_env" rows="8" placeholder="NODESEEK_NAME_1=main&#10;NODESEEK_COOKIE_1=nodepay_session=xxx"></textarea>
+  </section>
+
+  <div class="sticky-actions">
+    <button type="submit">保存配置</button>
+  </div>
+</form>
+{% endblock %}

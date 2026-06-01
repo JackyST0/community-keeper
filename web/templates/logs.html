@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}日志 - community-keeper{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>最近日志</h1>
+    <p class="muted">来自 <code>journalctl -u community-keeper.service</code></p>
+  </div>
+  <form method="get" action="/logs" class="inline-form">
+    <label>
+      行数
+      <input name="lines" value="{{ lines }}" type="number" min="20" max="1000">
+    </label>
+    <button type="submit">刷新</button>
+  </form>
+</section>
+
+<section class="card">
+  <pre class="logs">{{ logs }}</pre>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.env
+community-keeper.env
+data/
+logs/
+.claude/
+.worktrees/
+.linuxdo-profile/
+screenshots/
+*.log
+
+# Claude session memory (local only)
+.1code/
+memory/
