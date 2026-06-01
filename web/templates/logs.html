@@ -4,7 +4,7 @@
 <section class="hero">
   <div>
     <h1>最近日志</h1>
-    <p class="muted">来自 <code>journalctl -u community-keeper.service</code></p>
+    <p class="muted">任务运行日志会自动刷新。</p>
   </div>
   <form method="get" action="/logs" class="inline-form">
     <label>
@@ -12,10 +12,53 @@
       <input name="lines" value="{{ lines }}" type="number" min="20" max="1000">
     </label>
     <button type="submit">刷新</button>
+    <label>
+      <input id="auto-refresh" type="checkbox" checked>
+      实时刷新
+    </label>
   </form>
 </section>
 
 <section class="card">
-  <pre class="logs">{{ logs }}</pre>
+  <pre id="logs-output" class="logs">{{ logs }}</pre>
 </section>
+
+<script>
+(() => {
+  const output = document.getElementById("logs-output");
+  const autoRefresh = document.getElementById("auto-refresh");
+  const linesInput = document.querySelector('input[name="lines"]');
+  let lastText = output.textContent;
+
+  function scrollToBottom() {
+    output.scrollTop = output.scrollHeight;
+  }
+
+  async function refreshLogs() {
+    if (!autoRefresh.checked) {
+      return;
+    }
+    const lines = Math.max(20, Math.min(Number(linesInput.value || 200), 1000));
+    const response = await fetch(`/logs/text?lines=${lines}`, {
+      headers: { "Accept": "text/plain" },
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return;
+    }
+    const text = await response.text();
+    if (text !== lastText) {
+      const nearBottom = output.scrollTop + output.clientHeight >= output.scrollHeight - 24;
+      output.textContent = text;
+      lastText = text;
+      if (nearBottom) {
+        scrollToBottom();
+      }
+    }
+  }
+
+  scrollToBottom();
+  setInterval(refreshLogs, 2000);
+})();
+</script>
 {% endblock %}

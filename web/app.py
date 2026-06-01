@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -245,15 +245,24 @@ async def save_config(request: Request):
 async def logs_page(request: Request, lines: int = 200):
     if response := require_login(request):
         return response
+    safe_lines = max(20, min(lines, 1000))
     return templates.TemplateResponse(
         request=request,
         name="logs.html",
         context=template_context(
             request,
-            lines=max(20, min(lines, 1000)),
-            logs=systemd.recent_logs(lines),
+            lines=safe_lines,
+            logs=systemd.recent_logs(safe_lines),
         ),
     )
+
+
+@app.get("/logs/text", response_class=PlainTextResponse)
+async def logs_text(request: Request, lines: int = 200):
+    if response := require_login(request):
+        return response
+    safe_lines = max(20, min(lines, 1000))
+    return PlainTextResponse(systemd.recent_logs(safe_lines))
 
 
 @app.post("/actions/{action}")
