@@ -756,6 +756,7 @@ class NodeSeekDailyMission:
         except Exception:
             data = {}
         message = str(data.get("message") or data.get("msg") or "").strip()
+        body_is_html = "<html" in str(body_text).lower() or "<!doctype" in str(body_text).lower()
 
         already_markers = [
             "今日已签到", "今日已领取", "今天已完成签到",
@@ -767,6 +768,8 @@ class NodeSeekDailyMission:
         if status_code != 200:
             if status_code in {401, 403}:
                 return False, f"NodeSeek 签到接口返回 HTTP {status_code}，可能是 Cookie 失效或触发安全检查，请更新 Cookie 后重试"
+            if body_is_html:
+                return False, f"NodeSeek 签到接口返回 HTTP {status_code}，页面仍处于安全检查或站点异常，请稍后重试或更新 Cookie"
             compact_body = " ".join(str(body_text).split())[:120]
             return False, f"NodeSeek 签到接口返回 HTTP {status_code}: {compact_body}"
 
@@ -774,6 +777,8 @@ class NodeSeekDailyMission:
             return True, message or "Attendance succeeded via browser"
 
         compact_body = " ".join(str(body_text).split())[:120]
+        if body_is_html:
+            return False, "NodeSeek 签到失败：页面仍处于安全检查或返回了 HTML 错误页，请稍后重试或更新 Cookie"
         return False, message or f"NodeSeek 签到失败: {compact_body}"
 
     def _save_browser_cookies(self, browser) -> None:
