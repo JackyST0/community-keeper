@@ -214,10 +214,10 @@ run_main_phase() {
     fi
     log "DISPLAY is empty, starting main.py with xvfb-run."
     exec xvfb-run -a --server-args="-screen 0 ${XVFB_SCREEN}" \
-      "$PYTHON_BIN" "$INSTALL_DIR/main.py"
+      "$PYTHON_BIN" "$INSTALL_DIR/main.py" "$@"
   fi
 
-  exec "$PYTHON_BIN" "$INSTALL_DIR/main.py"
+  exec "$PYTHON_BIN" "$INSTALL_DIR/main.py" "$@"
 }
 
 main() {
@@ -228,7 +228,8 @@ main() {
       run_update_phase
       ;;
     --run-only)
-      run_main_phase
+      shift
+      run_main_phase "$@"
       ;;
     "")
       run_update_phase

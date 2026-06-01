@@ -272,10 +272,15 @@ async def run_action(request: Request, action: str):
         return response
     actions = {
         "start": systemd.start_task,
+        "start-nodeseek": lambda: systemd.start_platform_task("nodeseek"),
+        "start-linuxdo": lambda: systemd.start_platform_task("linuxdo"),
+        "start-v2ex": lambda: systemd.start_platform_task("v2ex"),
+        "start-naixi": lambda: systemd.start_platform_task("naixi"),
         "stop": systemd.stop_task,
         "enable-timer": systemd.enable_timer,
         "disable-timer": systemd.disable_timer,
         "update": systemd.update_code,
+        "clear-logs": systemd.clear_logs,
     }
     handler = actions.get(action)
     if handler is None:

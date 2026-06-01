@@ -81,6 +81,12 @@ def append_log(message: str) -> None:
         handle.write(f"\n[{timestamp}] {message}\n")
 
 
+def clear_logs() -> CommandResult:
+    ensure_log_dir()
+    LOG_FILE.write_text("", encoding="utf-8")
+    return CommandResult(True, "日志已清除。")
+
+
 def reset_startup_state() -> None:
     ensure_log_dir()
     LOG_FILE.write_text("", encoding="utf-8")
@@ -189,6 +195,20 @@ def start_task() -> CommandResult:
     if is_process_runtime():
         return start_process_task(["--run-only"], "manual run")
     return systemctl("start", TASK_SERVICE, timeout=10)
+
+
+def start_platform_task(platform: str) -> CommandResult:
+    platform_names = {
+        "nodeseek": "NodeSeek",
+        "linuxdo": "LinuxDo",
+        "v2ex": "V2EX",
+        "naixi": "奶昔论坛",
+    }
+    if platform not in platform_names:
+        return CommandResult(False, f"Unknown platform: {platform}")
+    if is_process_runtime():
+        return start_process_task(["--run-only", platform], f"{platform_names[platform]} manual run")
+    return CommandResult(False, "Single-platform run is only supported in process runtime.")
 
 
 def stop_task() -> CommandResult:

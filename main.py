@@ -3,6 +3,7 @@ cron: 0 */6 * * *
 new Env("Community Keeper")
 """
 
+import argparse
 import importlib
 import os
 import re
@@ -287,7 +288,8 @@ def run_linuxdo_task() -> bool:
     return linuxdo_cloak.run_linuxdo_task(headless=LINUXDO_HEADLESS)
 
 
-def run_configured_tasks() -> None:
+def run_configured_tasks(selected_tasks: Optional[Set[str]] = None) -> None:
+    selected_tasks = selected_tasks or {"v2ex", "nodeseek", "linuxdo", "naixi"}
     linuxdo_enabled = has_linuxdo_credentials()
     has_v2ex_credentials = bool(V2EX_COOKIE)
     nodeseek_accounts = collect_nodeseek_accounts()
@@ -308,12 +310,13 @@ def run_configured_tasks() -> None:
             + ", ".join(str(account["account_name"]) for account in nodeseek_accounts)
         )
 
-    if (
-        not linuxdo_enabled
-        and not has_v2ex_credentials
-        and not has_nodeseek_credentials
-        and not naixi_task.is_configured()
-    ):
+    has_selected_task = (
+        ("linuxdo" in selected_tasks and linuxdo_enabled)
+        or ("v2ex" in selected_tasks and has_v2ex_credentials)
+        or ("nodeseek" in selected_tasks and has_nodeseek_credentials)
+        or ("naixi" in selected_tasks and naixi_task.is_configured())
+    )
+    if not has_selected_task:
         print(
             "请设置 LINUXDO_COOKIES；"
             "如需启用 V2EX，请设置 V2EX_COOKIE；"
@@ -322,30 +325,47 @@ def run_configured_tasks() -> None:
         )
         raise SystemExit(1)
 
-    TaskRunner().run(
-        [
+    tasks = []
+    if "v2ex" in selected_tasks:
+        tasks.append(
             FunctionTask(
                 name="v2ex",
                 enabled=has_v2ex_credentials,
                 action=run_v2ex_task,
                 skip_detail="未配置 V2EX Cookie，跳过 V2EX 每日签到",
-            ),
+            )
+        )
+    if "nodeseek" in selected_tasks:
+        tasks.append(
             FunctionTask(
                 name="nodeseek",
                 enabled=has_nodeseek_credentials,
                 action=lambda: run_nodeseek_tasks(nodeseek_accounts),
                 skip_detail="未配置 NodeSeek Cookie，跳过 NodeSeek 每日签到",
-            ),
+            )
+        )
+    if "linuxdo" in selected_tasks:
+        tasks.append(
             FunctionTask(
                 name="linuxdo",
                 enabled=linuxdo_enabled,
                 action=run_linuxdo_task,
                 skip_detail="未配置 LinuxDo Cookie，跳过 LinuxDo 任务",
-            ),
-            naixi_task,
-        ]
-    )
+            )
+        )
+    if "naixi" in selected_tasks:
+        tasks.append(naixi_task)
+
+    TaskRunner().run(tasks)
 
 
 if __name__ == "__main__":
-    run_configured_tasks()
+    parser = argparse.ArgumentParser(description="community-keeper task runner")
+    parser.add_argument(
+        "tasks",
+        nargs="*",
+        choices=["v2ex", "nodeseek", "linuxdo", "naixi"],
+        help="只运行指定平台；不指定时运行全部已配置平台。",
+    )
+    args = parser.parse_args()
+    run_configured_tasks(set(args.tasks) if args.tasks else None)
