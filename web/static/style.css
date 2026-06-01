@@ -307,9 +307,14 @@ pre {
 }
 
 .platform-divider {
-  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.28), transparent);
-  height: 1px;
-  margin: 12px 8px;
+  color: rgba(148, 163, 184, 0.5);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  margin: 14px 8px;
+  overflow: hidden;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .log-card {
