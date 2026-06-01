@@ -4,7 +4,7 @@
 <section class="hero">
   <div>
     <h1>实时日志</h1>
-    <p class="muted">任务输出会自动滚动到最新位置，成功、跳过和错误会用不同颜色标记。</p>
+    <p class="muted">任务输出会按平台分组展示，方便快速查看每个平台的执行结果。</p>
   </div>
   <form method="get" action="/logs" class="inline-form">
     <label>
@@ -110,33 +110,123 @@
     };
   }
 
+  const logGroups = [
+    { key: "system", title: "系统与调度", icon: "⚙", hint: "启动、调度、运行摘要" },
+    { key: "nodeseek", title: "NodeSeek", icon: "N", hint: "NodeSeek 签到与账号信息" },
+    { key: "linuxdo", title: "LinuxDo", icon: "L", hint: "LinuxDo 登录、浏览、Connect" },
+    { key: "v2ex", title: "V2EX", icon: "V", hint: "V2EX 每日签到" },
+    { key: "naixi", title: "奶昔论坛", icon: "奶", hint: "奶昔论坛签到" },
+    { key: "other", title: "其他日志", icon: "·", hint: "未归类输出" },
+  ];
+
+  function groupForLine(line, parsed) {
+    const text = `${parsed.source || ""} ${parsed.message || ""} ${line || ""}`.toLowerCase();
+    if (text.includes("runtime task summary")) {
+      return "system";
+    }
+    if (text.includes("nodeseek")) {
+      return "nodeseek";
+    }
+    if (text.includes("linuxdo")) {
+      return "linuxdo";
+    }
+    if (text.includes("v2ex")) {
+      return "v2ex";
+    }
+    if (text.includes("naixi") || text.includes("奶昔")) {
+      return "naixi";
+    }
+    if (
+      text.includes("scheduler")
+      || text.includes("runtime")
+      || text.includes("run.sh")
+      || text.includes("starting manual")
+      || text.includes("starting code")
+      || text.includes("display is empty")
+    ) {
+      return "system";
+    }
+    return "other";
+  }
+
+  function createLogRow(line, parsed) {
+    const row = document.createElement("div");
+    row.className = `log-line ${lineTone(line, parsed.level)}`;
+
+    const time = document.createElement("span");
+    time.className = "log-time";
+    time.textContent = parsed.time || " ";
+
+    const level = document.createElement("span");
+    level.className = `log-level ${lineTone(line, parsed.level)}`;
+    level.textContent = parsed.level || "LOG";
+
+    const source = document.createElement("span");
+    source.className = "log-source";
+    source.textContent = parsed.source || " ";
+
+    const message = document.createElement("span");
+    message.className = "log-message";
+    message.textContent = parsed.message || " ";
+
+    row.append(time, level, source, message);
+    return row;
+  }
+
   function renderLogs(text) {
     output.replaceChildren();
     const fragment = document.createDocumentFragment();
+    const buckets = new Map(logGroups.map((group) => [group.key, []]));
+
     for (const line of text.split("\n")) {
-      const row = document.createElement("div");
       const parsed = parseLine(line);
-      row.className = `log-line ${lineTone(line, parsed.level)}`;
-
-      const time = document.createElement("span");
-      time.className = "log-time";
-      time.textContent = parsed.time || " ";
-
-      const level = document.createElement("span");
-      level.className = `log-level ${lineTone(line, parsed.level)}`;
-      level.textContent = parsed.level || "LOG";
-
-      const source = document.createElement("span");
-      source.className = "log-source";
-      source.textContent = parsed.source || " ";
-
-      const message = document.createElement("span");
-      message.className = "log-message";
-      message.textContent = parsed.message || " ";
-
-      row.append(time, level, source, message);
-      fragment.appendChild(row);
+      const groupKey = groupForLine(line, parsed);
+      buckets.get(groupKey).push({ line, parsed });
     }
+
+    for (const group of logGroups) {
+      const entries = buckets.get(group.key).filter(({ line }) => line.trim());
+      if (!entries.length) {
+        continue;
+      }
+
+      const section = document.createElement("section");
+      section.className = `log-section ${group.key}`;
+
+      const header = document.createElement("div");
+      header.className = "log-section-header";
+
+      const left = document.createElement("div");
+      left.className = "log-section-title";
+
+      const icon = document.createElement("span");
+      icon.className = "log-section-icon";
+      icon.textContent = group.icon;
+
+      const titleWrap = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = group.title;
+      const hint = document.createElement("span");
+      hint.textContent = group.hint;
+      titleWrap.append(title, hint);
+      left.append(icon, titleWrap);
+
+      const count = document.createElement("span");
+      count.className = "log-section-count";
+      count.textContent = `${entries.length} 条`;
+
+      header.append(left, count);
+      section.appendChild(header);
+
+      const body = document.createElement("div");
+      body.className = "log-section-body";
+      for (const entry of entries) {
+        body.appendChild(createLogRow(entry.line, entry.parsed));
+      }
+      section.appendChild(body);
+      fragment.appendChild(section);
+    }
+
     output.appendChild(fragment);
   }
 
