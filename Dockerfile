@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-liberation \
     git \
+    xauth \
     xvfb \
     unzip \
     libasound2 \
