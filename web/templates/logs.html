@@ -4,7 +4,7 @@
 <section class="hero">
   <div>
     <h1>实时日志</h1>
-    <p class="muted">任务输出会按平台分组展示，方便快速查看每个平台的执行结果。</p>
+    <p class="muted">直接显示任务实时输出。</p>
   </div>
   <form method="get" action="/logs" class="inline-form">
     <label>
@@ -29,8 +29,8 @@
       <span class="terminal-dot yellow"></span>
       <span class="terminal-dot green"></span>
       <div>
-        <strong>签到结果</strong>
-        <span class="log-subtitle">只显示每个平台本次执行情况</span>
+        <strong>community-keeper.log</strong>
+        <span class="log-subtitle">实时任务输出</span>
       </div>
     </div>
     <div class="log-meta">
@@ -131,248 +131,29 @@
     }).format(parsedAsUtc);
   }
 
-  const platforms = [
-    { key: "nodeseek", name: "NodeSeek", icon: "NS", cookieName: "NODESEEK_COOKIE" },
-    { key: "linuxdo", name: "LinuxDo", icon: "LD", cookieName: "LINUXDO_COOKIES" },
-    { key: "v2ex", name: "V2EX", icon: "VX", cookieName: "V2EX_COOKIE" },
-    { key: "naixi", name: "奶昔论坛", icon: "NX", cookieName: "NAIXI_COOKIE" },
-  ];
+  function renderLogLine(line) {
+    const parsed = parseLine(line);
+    const row = document.createElement("div");
+    row.className = `execution-log-line ${lineTone(line, parsed.level)}`;
 
-  function platformText(platform, line, parsed) {
-    return `${parsed.source || ""} ${parsed.message || ""} ${line || ""}`.toLowerCase();
-  }
+    const time = document.createElement("span");
+    time.className = "execution-log-time";
+    time.textContent = formatTime(parsed.time) || "--:--:--";
 
-  function emptyStatus(platform) {
-    return {
-      platform,
-      state: "pending",
-      label: "未运行",
-      detail: "还没有看到这个平台的执行结果",
-      time: "",
-    };
-  }
+    const message = document.createElement("span");
+    message.className = "execution-log-message";
+    message.textContent = parsed.message || line || " ";
 
-  function summarizePlatform(platform, parsedLines) {
-    const status = emptyStatus(platform);
-    for (const item of parsedLines) {
-      const text = platformText(platform, item.line, item.parsed);
-      if (!text.includes(platform.key) && !text.includes(platform.name.toLowerCase())) {
-        continue;
-      }
-      const message = item.parsed.message || item.line;
-      status.time = formatTime(item.parsed.time) || status.time;
-      if (platform.key === "nodeseek") {
-        const summary = nodeSeekSummary(message);
-        if (summary) {
-          status.detail = summary;
-        }
-      }
-
-      if (text.includes("failed") || text.includes("失败") || text.includes("error") || text.includes("returned false")) {
-        status.state = "failed";
-        status.label = "失败";
-        status.detail = cleanDetail(message);
-      } else if (text.includes("skipped") || text.includes("跳过") || text.includes("未配置")) {
-        status.state = "skipped";
-        status.label = "已跳过";
-        status.detail = cleanDetail(message);
-      } else if (
-        text.includes("completed")
-        || text.includes("succeeded")
-        || text.includes("签到成功")
-        || text.includes("已完成签到")
-        || text.includes("今天已完成签到")
-      ) {
-        status.state = "success";
-        status.label = "已签到";
-        status.detail = platform.key === "nodeseek"
-          ? status.detail || nodeSeekSummary(message) || cleanDetail(message)
-          : cleanDetail(message);
-      } else if (text.includes("starting") || text.includes("开始执行")) {
-        status.state = status.state === "pending" ? "running" : status.state;
-        status.label = status.state === "running" ? "运行中" : status.label;
-        status.detail = status.state === "running" ? "正在执行任务" : status.detail;
-      }
-    }
-    return status;
-  }
-
-  function cleanDetail(message) {
-    return message
-      .replace(/^(.+) skipped: /, "")
-      .replace(/^(.+) completed: /, "")
-      .replace(/^NodeSeek attendance succeeded via browser: /, "")
-      .replace(/^(.+) failed: /, "")
-      .replace(/^(.+) returned false$/, "$1 返回失败")
-      .trim() || "已完成";
-  }
-
-  function firstMatch(message, pattern) {
-    const match = message.match(pattern);
-    return match ? match[1] : "";
-  }
-
-  function nodeSeekSummary(message) {
-    const account = firstMatch(message, /account=([^,]+)/);
-    const todayReward = firstMatch(message, /today_reward=([^,\s]+)/);
-    const currentBalance = firstMatch(message, /current_balance=([^,\s]+)/)
-      || firstMatch(message, /'chicken_legs':\s*([^,}]+)/);
-    const currentStreak = firstMatch(message, /current_streak=([^,\s]+)/);
-    const totalSignins = firstMatch(message, /total_signins=([^,\s]+)/);
-    const level = firstMatch(message, /'level':\s*([^,}]+)/);
-    const stardust = firstMatch(message, /'stardust':\s*([^,}]+)/);
-    const topics = firstMatch(message, /'topics':\s*([^,}]+)/);
-    const comments = firstMatch(message, /'comments':\s*([^,}]+)/);
-    const fans = firstMatch(message, /'fans':\s*([^,}]+)/);
-    const notifications = firstMatch(message, /'notifications':\s*([^,}]+)/);
-    const collections = firstMatch(message, /'collections':\s*([^,}]+)/);
-
-    const parts = [];
-    if (account && account !== "None") {
-      parts.push(`账号 ${account}`);
-    }
-    if (todayReward && todayReward !== "None") {
-      parts.push(`今日获得 ${todayReward} 鸡腿`);
-    }
-    if (currentBalance && currentBalance !== "None") {
-      parts.push(`当前共 ${currentBalance} 鸡腿`);
-    }
-    if (currentStreak && currentStreak !== "None") {
-      parts.push(`连续签到 ${currentStreak} 天`);
-    }
-    if (totalSignins && totalSignins !== "None") {
-      parts.push(`累计签到 ${totalSignins} 天`);
-    }
-    if (level && level !== "None") {
-      parts.push(`等级 ${level}`);
-    }
-    if (stardust && stardust !== "None") {
-      parts.push(`星辰 ${stardust}`);
-    }
-    if (topics && topics !== "None") {
-      parts.push(`主题 ${topics}`);
-    }
-    if (comments && comments !== "None") {
-      parts.push(`评论 ${comments}`);
-    }
-    if (fans && fans !== "None") {
-      parts.push(`粉丝 ${fans}`);
-    }
-    if (notifications && notifications !== "None") {
-      parts.push(`通知 ${notifications}`);
-    }
-    if (collections && collections !== "None") {
-      parts.push(`收藏 ${collections}`);
-    }
-    return parts.join("；");
-  }
-
-  function renderPlatformStatus(status) {
-    const card = document.createElement("section");
-    card.className = `platform-result ${status.platform.key} ${status.state}`;
-
-    const icon = document.createElement("span");
-    icon.className = "platform-result-icon";
-    icon.textContent = status.platform.icon;
-
-    const body = document.createElement("div");
-    body.className = "platform-result-body";
-
-    const name = document.createElement("strong");
-    name.textContent = status.platform.name;
-
-    body.appendChild(name);
-    if (status.state === "failed" || (status.platform.key === "nodeseek" && status.state === "success" && status.detail)) {
-      const detail = document.createElement("span");
-      detail.textContent = status.detail;
-      body.appendChild(detail);
-    }
-
-    const meta = document.createElement("div");
-    meta.className = "platform-result-meta";
-
-    const label = document.createElement("span");
-    label.className = `platform-status ${status.state}`;
-    label.textContent = status.label;
-    meta.appendChild(label);
-
-    if (status.time) {
-      const time = document.createElement("span");
-      time.className = "platform-time";
-      time.textContent = status.time;
-      meta.appendChild(time);
-    }
-
-    card.append(icon, body, meta);
-    return card;
-  }
-
-  function taskIsRunning(parsedLines) {
-    const hasStarted = parsedLines.some(({ line }) => {
-      const text = line.toLowerCase();
-      return text.includes("starting manual run")
-        || text.includes("running main.py")
-        || text.includes("starting nodeseek task")
-        || text.includes("starting linuxdo task")
-        || text.includes("starting v2ex task")
-        || text.includes("starting naixi task");
-    });
-    const hasFinished = parsedLines.some(({ line }) => line.includes("运行结束"));
-    return hasStarted && !hasFinished;
-  }
-
-  function renderExecutionLogs(parsedLines) {
-    const panel = document.createElement("section");
-    panel.className = "execution-log-panel";
-
-    const title = document.createElement("div");
-    title.className = "execution-log-title";
-    title.textContent = "执行中日志";
-    panel.appendChild(title);
-
-    for (const item of parsedLines.slice(-80)) {
-      const row = document.createElement("div");
-      row.className = `execution-log-line ${lineTone(item.line, item.parsed.level)}`;
-
-      const time = document.createElement("span");
-      time.className = "execution-log-time";
-      time.textContent = formatTime(item.parsed.time) || "--:--:--";
-
-      const message = document.createElement("span");
-      message.className = "execution-log-message";
-      message.textContent = item.parsed.message || item.line;
-
-      row.append(time, message);
-      panel.appendChild(row);
-    }
-    return panel;
+    row.append(time, message);
+    return row;
   }
 
   function renderLogs(text) {
     output.replaceChildren();
     const fragment = document.createDocumentFragment();
-    const parsedLines = text
-      .split("\n")
-      .filter((line) => line.trim())
-      .map((line) => ({ line, parsed: parseLine(line) }));
-
-    const title = document.createElement("div");
-    title.className = "platform-results-title";
-    title.textContent = "本次签到结果";
-    fragment.appendChild(title);
-
-    platforms.forEach((platform, index) => {
-      fragment.appendChild(renderPlatformStatus(summarizePlatform(platform, parsedLines)));
-      if (index < platforms.length - 1) {
-        const divider = document.createElement("div");
-        divider.className = "platform-divider";
-        divider.textContent = "--------------------------------------------------------------------------------";
-        fragment.appendChild(divider);
-      }
-    });
-
-    if (taskIsRunning(parsedLines)) {
-      fragment.appendChild(renderExecutionLogs(parsedLines));
+    const lines = text.split("\n");
+    for (const line of lines) {
+      fragment.appendChild(renderLogLine(line));
     }
 
     output.appendChild(fragment);

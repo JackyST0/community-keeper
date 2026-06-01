@@ -82,6 +82,10 @@ def append_log(message: str) -> None:
 
 
 def clear_logs() -> CommandResult:
+    clear_stale_pid()
+    pid = read_pid()
+    if process_is_running(pid):
+        return CommandResult(False, f"任务正在运行中，不能清除日志。请等待结束或先停止运行，pid={pid}")
     ensure_log_dir()
     LOG_FILE.write_text("", encoding="utf-8")
     return CommandResult(True, "日志已清除。")
