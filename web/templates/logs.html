@@ -148,6 +148,12 @@
       }
       const message = item.parsed.message || item.line;
       status.time = formatTime(item.parsed.time) || status.time;
+      if (platform.key === "nodeseek") {
+        const summary = nodeSeekSummary(message);
+        if (summary) {
+          status.detail = summary;
+        }
+      }
 
       if (text.includes("failed") || text.includes("失败") || text.includes("error")) {
         status.state = "failed";
@@ -166,7 +172,9 @@
       ) {
         status.state = "success";
         status.label = "已签到";
-        status.detail = cleanDetail(message);
+        status.detail = platform.key === "nodeseek"
+          ? status.detail || nodeSeekSummary(message) || cleanDetail(message)
+          : cleanDetail(message);
       } else if (text.includes("starting") || text.includes("开始执行")) {
         status.state = status.state === "pending" ? "running" : status.state;
         status.label = status.state === "running" ? "运行中" : status.label;
@@ -185,6 +193,38 @@
       .trim() || "已完成";
   }
 
+  function firstMatch(message, pattern) {
+    const match = message.match(pattern);
+    return match ? match[1] : "";
+  }
+
+  function nodeSeekSummary(message) {
+    const todayReward = firstMatch(message, /today_reward=([^,\s]+)/);
+    const currentBalance = firstMatch(message, /current_balance=([^,\s]+)/)
+      || firstMatch(message, /'chicken_legs':\s*([^,}]+)/);
+    const currentStreak = firstMatch(message, /current_streak=([^,\s]+)/);
+    const totalSignins = firstMatch(message, /total_signins=([^,\s]+)/);
+    const level = firstMatch(message, /'level':\s*([^,}]+)/);
+
+    const parts = [];
+    if (todayReward && todayReward !== "None") {
+      parts.push(`今日获得 ${todayReward} 鸡腿`);
+    }
+    if (currentBalance && currentBalance !== "None") {
+      parts.push(`当前共 ${currentBalance} 鸡腿`);
+    }
+    if (currentStreak && currentStreak !== "None") {
+      parts.push(`连续签到 ${currentStreak} 天`);
+    }
+    if (totalSignins && totalSignins !== "None") {
+      parts.push(`累计签到 ${totalSignins} 天`);
+    }
+    if (level && level !== "None") {
+      parts.push(`等级 ${level}`);
+    }
+    return parts.join("，");
+  }
+
   function renderPlatformStatus(status) {
     const card = document.createElement("section");
     card.className = `platform-result ${status.platform.key} ${status.state}`;
@@ -200,7 +240,7 @@
     name.textContent = status.platform.name;
 
     body.appendChild(name);
-    if (status.state === "failed") {
+    if (status.state === "failed" || (status.platform.key === "nodeseek" && status.state === "success" && status.detail)) {
       const detail = document.createElement("span");
       detail.textContent = status.detail;
       body.appendChild(detail);
@@ -243,7 +283,7 @@
       if (index < platforms.length - 1) {
         const divider = document.createElement("div");
         divider.className = "platform-divider";
-        divider.textContent = "----------------------------------------";
+        divider.textContent = "--------------------------------------------------------------------------------";
         fragment.appendChild(divider);
       }
     });
