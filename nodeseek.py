@@ -765,12 +765,16 @@ class NodeSeekDailyMission:
             return True, message or "Attendance already completed"
 
         if status_code != 200:
-            return False, f"Browser attendance HTTP {status_code}: {body_text[:200]}"
+            if status_code in {401, 403}:
+                return False, f"NodeSeek 签到接口返回 HTTP {status_code}，可能是 Cookie 失效或触发安全检查，请更新 Cookie 后重试"
+            compact_body = " ".join(str(body_text).split())[:120]
+            return False, f"NodeSeek 签到接口返回 HTTP {status_code}: {compact_body}"
 
         if data.get("success") is True:
             return True, message or "Attendance succeeded via browser"
 
-        return False, message or f"Browser attendance failed: {body_text[:200]}"
+        compact_body = " ".join(str(body_text).split())[:120]
+        return False, message or f"NodeSeek 签到失败: {compact_body}"
 
     def _save_browser_cookies(self, browser) -> None:
         try:

@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Union
 
 from loguru import logger
 
@@ -10,7 +10,7 @@ class FunctionTask:
         self,
         name: str,
         enabled: bool,
-        action: Callable[[], bool],
+        action: Callable[[], Union[bool, TaskResult]],
         skip_detail: str,
     ) -> None:
         self.name = name
@@ -23,7 +23,10 @@ class FunctionTask:
             return TaskResult.skip(self.name, self.skip_detail)
 
         logger.info(f"Starting {self.name} task")
-        ok = bool(self.action())
+        result = self.action()
+        if isinstance(result, TaskResult):
+            return result
+        ok = bool(result)
         if ok:
             return TaskResult.ok(self.name, "finished")
         return TaskResult.fail(self.name, "returned false")

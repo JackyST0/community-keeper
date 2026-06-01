@@ -2005,6 +2005,7 @@ async () => {{
                 f"浏览摘要: {self.browse_stats['topics_completed']}/{self.browse_stats['topics_planned']} 个主题, "
                 f"点赞 {self.browse_stats['likes']} 次"
             )
+        logger.success("LinuxDo 任务详情: " + "；".join(status_lines[1:]))
         self.notifier.send_all("LINUX DO", "\n".join(status_lines))
 
     def run(self, browse_enabled: bool = BROWSE_ENABLED) -> bool:

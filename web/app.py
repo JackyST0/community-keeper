@@ -290,4 +290,6 @@ async def run_action(request: Request, action: str):
     result = handler()
     category = "success" if result.ok else "error"
     flash(request, result.output or "操作已提交。", category)
+    if action in {"start", "start-nodeseek", "start-linuxdo", "start-v2ex", "start-naixi", "update", "clear-logs"}:
+        return redirect("/logs")
     return redirect("/")

@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Set
 
 from loguru import logger
 from core.runner import TaskRunner
+from core.task import TaskResult
 from nodeseek import NodeSeekDailyMission
 from notify import NotificationManager
 from tasks.function_task import FunctionTask
@@ -254,13 +255,46 @@ def load_linuxdo_cloak_module():
     return importlib.import_module("linuxdo_cloak")
 
 
-def run_v2ex_task() -> bool:
-    return V2EXDailyMission(V2EX_COOKIE).run()
+def run_v2ex_task() -> TaskResult:
+    mission = V2EXDailyMission(V2EX_COOKIE)
+    ok = mission.run()
+    detail = mission.last_detail or "V2EX 每日签到完成"
+    return TaskResult.ok("v2ex", detail) if ok else TaskResult.fail("v2ex", detail)
 
 
-def run_nodeseek_tasks(nodeseek_accounts: List[Dict[str, object]]) -> bool:
+def nodeseek_detail(mission: NodeSeekDailyMission) -> str:
+    parts = [f"账号 {mission.get_account_display_name()}"]
+    summary = mission.cached_credit_summary
+    profile = mission.cached_profile_summary
+    if summary.get("today_reward") is not None:
+        parts.append(f"今日获得 {summary.get('today_reward')} 鸡腿")
+    if summary.get("current_balance") is not None:
+        parts.append(f"当前共 {summary.get('current_balance')} 鸡腿")
+    if summary.get("current_streak") is not None:
+        parts.append(f"连续签到 {summary.get('current_streak')} 天")
+    if summary.get("total_signins") is not None:
+        parts.append(f"累计签到 {summary.get('total_signins')} 天")
+    if profile.get("level") is not None:
+        parts.append(f"等级 {profile.get('level')}")
+    if profile.get("stardust") is not None:
+        parts.append(f"星辰 {profile.get('stardust')}")
+    if profile.get("topics") is not None:
+        parts.append(f"主题 {profile.get('topics')}")
+    if profile.get("comments") is not None:
+        parts.append(f"评论 {profile.get('comments')}")
+    if profile.get("fans") is not None:
+        parts.append(f"粉丝 {profile.get('fans')}")
+    if profile.get("notifications") is not None:
+        parts.append(f"通知 {profile.get('notifications')}")
+    if profile.get("collections") is not None:
+        parts.append(f"收藏 {profile.get('collections')}")
+    return "；".join(parts)
+
+
+def run_nodeseek_tasks(nodeseek_accounts: List[Dict[str, object]]) -> TaskResult:
     logger.info(f"Configured {len(nodeseek_accounts)} NodeSeek account(s)")
     all_ok = True
+    details: List[str] = []
     for position, account in enumerate(nodeseek_accounts):
         if position > 0 and NODESEEK_ACCOUNT_DELAY_SECONDS > 0:
             logger.info(
@@ -269,7 +303,7 @@ def run_nodeseek_tasks(nodeseek_accounts: List[Dict[str, object]]) -> bool:
                 "to reduce same-IP rate limiting"
             )
             time.sleep(NODESEEK_ACCOUNT_DELAY_SECONDS)
-        ok = NodeSeekDailyMission(
+        mission = NodeSeekDailyMission(
             cookie_str=account["cookie_str"],
             env_file_path=ENV_FILE_PATH,
             notifier=NotificationManager(),
@@ -278,9 +312,15 @@ def run_nodeseek_tasks(nodeseek_accounts: List[Dict[str, object]]) -> bool:
             headless=account["headless"],
             cookie_env_var_name=account["cookie_env_var_name"],
             account_name=account["account_name"],
-        ).run()
+        )
+        ok = mission.run()
+        if ok:
+            details.append(nodeseek_detail(mission))
+        else:
+            details.append(f"账号 {mission.get_account_display_name()} 执行失败")
         all_ok = bool(ok) and all_ok
-    return all_ok
+    detail = " | ".join(details) if details else "NodeSeek 未执行"
+    return TaskResult.ok("nodeseek", detail) if all_ok else TaskResult.fail("nodeseek", detail)
 
 
 def run_linuxdo_task() -> bool:
@@ -356,7 +396,9 @@ def run_configured_tasks(selected_tasks: Optional[Set[str]] = None) -> None:
     if "naixi" in selected_tasks:
         tasks.append(naixi_task)
 
-    TaskRunner().run(tasks)
+    results = TaskRunner().run(tasks)
+    if any(not result.success for result in results):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

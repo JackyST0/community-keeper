@@ -350,6 +350,12 @@ class V2EXDailyMission:
             f"V2EX notification summary: account={self.username or 'unknown'}, "
             f"today_reward={today_reward}, current_balance={current_balance}"
         )
+        detail_parts = [f"账号 {self.username or 'unknown'}", f"结果 {detail}"]
+        if today_reward is not None:
+            detail_parts.append(f"今日获得 {today_reward} 铜币")
+        if current_balance is not None:
+            detail_parts.append(f"当前余额 {current_balance}")
+        self.last_detail = "；".join(detail_parts)
         lines = [
             "✅ V2EX daily mission completed",
             f"Account: {self.username or 'unknown'}",
