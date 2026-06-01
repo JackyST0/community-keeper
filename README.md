@@ -223,11 +223,12 @@ NOTIFY_TIMEZONE=Asia/Shanghai
 
 ### 奶昔论坛
 
-1. 打开 `k_misign-sign.html`
-2. 判断今天是否已经签到
-3. 如果还未签到，则提取 `JD_sign` 里的签到链接并请求
-4. 回读签到页确认结果
-5. 发送通知，包含排名、连续签到、签到等级、积分奖励和总天数
+1. 使用 Chromium 打开奶昔论坛并通过站点安全检查
+2. 注入 `NAIXI_COOKIE`，跳过 `cf_clearance`、`naixi_6720_lip` 这类 IP 绑定 Cookie
+3. 打开 `k_misign-sign.html` 判断今天是否已经签到
+4. 如果还未签到，则提取 `JD_sign` 里的签到链接并在浏览器会话里请求
+5. 回读签到页确认结果
+6. 发送通知，包含排名、连续签到、签到等级、积分奖励和总天数
 
 ## FAQ
 
