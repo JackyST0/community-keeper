@@ -80,6 +80,17 @@ def append_log(message: str) -> None:
         handle.write(f"\n[{timestamp}] {message}\n")
 
 
+def reset_startup_state() -> None:
+    ensure_log_dir()
+    LOG_FILE.write_text("", encoding="utf-8")
+    try:
+        SCHEDULER_ENABLED_FILE.unlink()
+    except FileNotFoundError:
+        pass
+    SCHEDULER_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SCHEDULER_STATE_FILE.write_text("Scheduler disabled.\n", encoding="utf-8")
+
+
 def read_pid() -> int:
     try:
         return int(PID_FILE.read_text(encoding="utf-8").strip())

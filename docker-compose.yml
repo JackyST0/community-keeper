@@ -13,6 +13,7 @@ services:
       COMMUNITY_KEEPER_PID_FILE: /data/community-keeper.pid
       COMMUNITY_KEEPER_SCHEDULER_ENABLED_FILE: /data/scheduler.enabled
       COMMUNITY_KEEPER_SCHEDULER_STATE_FILE: /data/scheduler.state
+      COMMUNITY_KEEPER_SCHEDULER_ENABLED: "false"
       INSTALL_DIR: /app
       PYTHON_BIN: /usr/local/bin/python
       PIP_BIN: /usr/local/bin/pip
@@ -41,7 +42,7 @@ services:
       COMMUNITY_KEEPER_PID_FILE: /data/community-keeper.pid
       COMMUNITY_KEEPER_SCHEDULER_ENABLED_FILE: /data/scheduler.enabled
       COMMUNITY_KEEPER_SCHEDULER_STATE_FILE: /data/scheduler.state
-      COMMUNITY_KEEPER_SCHEDULER_ENABLED: "true"
+      COMMUNITY_KEEPER_SCHEDULER_ENABLED: "false"
       COMMUNITY_KEEPER_RUN_TIME: "00:10"
       COMMUNITY_KEEPER_RANDOM_DELAY_SECONDS: "600"
       INSTALL_DIR: /app

@@ -3,8 +3,8 @@
 {% block content %}
 <section class="hero">
   <div>
-    <h1>最近日志</h1>
-    <p class="muted">任务运行日志会自动刷新。</p>
+    <h1>实时日志</h1>
+    <p class="muted">任务输出会自动滚动到最新位置，成功、跳过和错误会用不同颜色标记。</p>
   </div>
   <form method="get" action="/logs" class="inline-form">
     <label>
@@ -19,8 +19,20 @@
   </form>
 </section>
 
-<section class="card">
-  <pre id="logs-output" class="logs">{{ logs }}</pre>
+<section class="card log-card">
+  <div class="log-toolbar">
+    <div class="log-title">
+      <span class="terminal-dot red"></span>
+      <span class="terminal-dot yellow"></span>
+      <span class="terminal-dot green"></span>
+      <span>community-keeper.log</span>
+    </div>
+    <div class="log-meta">
+      <span id="refresh-status" class="status-pill live">实时中</span>
+      <span id="last-updated" class="muted">刚刚更新</span>
+    </div>
+  </div>
+  <div id="logs-output" class="logs" data-initial-logs="{{ logs | e }}"></div>
 </section>
 
 <script>
@@ -28,14 +40,51 @@
   const output = document.getElementById("logs-output");
   const autoRefresh = document.getElementById("auto-refresh");
   const linesInput = document.querySelector('input[name="lines"]');
-  let lastText = output.textContent;
+  const refreshStatus = document.getElementById("refresh-status");
+  const lastUpdated = document.getElementById("last-updated");
+  let lastText = output.dataset.initialLogs || "";
 
   function scrollToBottom() {
     output.scrollTop = output.scrollHeight;
   }
 
+  function lineClass(line) {
+    if (line.includes("| SUCCESS |") || line.includes(" succeeded")) {
+      return "success";
+    }
+    if (line.includes("| WARNING |") || line.includes(" skipped") || line.includes("跳过")) {
+      return "warning";
+    }
+    if (line.includes("| ERROR |") || line.includes("failed") || line.includes("error:")) {
+      return "error";
+    }
+    if (line.includes("| INFO ") || line.includes("Starting")) {
+      return "info";
+    }
+    return "plain";
+  }
+
+  function renderLogs(text) {
+    output.replaceChildren();
+    const fragment = document.createDocumentFragment();
+    for (const line of text.split("\n")) {
+      const row = document.createElement("div");
+      row.className = `log-line ${lineClass(line)}`;
+      row.textContent = line || " ";
+      fragment.appendChild(row);
+    }
+    output.appendChild(fragment);
+  }
+
+  function updateStatus(text, isLive = true) {
+    refreshStatus.textContent = isLive ? "实时中" : "已暂停";
+    refreshStatus.className = isLive ? "status-pill live" : "status-pill paused";
+    lastUpdated.textContent = text;
+  }
+
   async function refreshLogs() {
     if (!autoRefresh.checked) {
+      updateStatus("自动刷新已暂停", false);
       return;
     }
     const lines = Math.max(20, Math.min(Number(linesInput.value || 200), 1000));
@@ -44,20 +93,29 @@
       cache: "no-store",
     });
     if (!response.ok) {
+      updateStatus("刷新失败");
       return;
     }
     const text = await response.text();
     if (text !== lastText) {
       const nearBottom = output.scrollTop + output.clientHeight >= output.scrollHeight - 24;
-      output.textContent = text;
+      renderLogs(text);
       lastText = text;
       if (nearBottom) {
         scrollToBottom();
       }
     }
+    updateStatus(new Date().toLocaleTimeString());
   }
 
+  renderLogs(lastText);
   scrollToBottom();
+  autoRefresh.addEventListener("change", () => {
+    updateStatus(autoRefresh.checked ? "已恢复实时刷新" : "自动刷新已暂停", autoRefresh.checked);
+    if (autoRefresh.checked) {
+      refreshLogs();
+    }
+  });
   setInterval(refreshLogs, 2000);
 })();
 </script>

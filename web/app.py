@@ -35,6 +35,7 @@ def session_secret() -> str:
 
 
 preload_env()
+systemd.reset_startup_state()
 app = FastAPI(title="community-keeper Web")
 app.add_middleware(
     SessionMiddleware,

@@ -41,7 +41,7 @@ def write_state(message: str) -> None:
 
 
 def scheduler_enabled_by_default() -> bool:
-    raw = os.environ.get("COMMUNITY_KEEPER_SCHEDULER_ENABLED", "true")
+    raw = os.environ.get("COMMUNITY_KEEPER_SCHEDULER_ENABLED", "false")
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
@@ -52,6 +52,11 @@ def ensure_initial_enabled_state() -> None:
 
 
 def main() -> None:
+    if not scheduler_enabled_by_default():
+        try:
+            systemd.SCHEDULER_ENABLED_FILE.unlink()
+        except FileNotFoundError:
+            pass
     ensure_initial_enabled_state()
     systemd.append_log("Docker scheduler started")
 
