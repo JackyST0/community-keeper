@@ -10,6 +10,12 @@ const copyButton = document.querySelector("#copyButton");
 const clearButton = document.querySelector("#clearButton");
 const projectButton = document.querySelector("#projectButton");
 const versionText = document.querySelector("#versionText");
+const batchDialog = document.querySelector("#batchDialog");
+const batchDialogClose = document.querySelector("#batchDialogClose");
+const batchCancelButton = document.querySelector("#batchCancelButton");
+const batchStartButton = document.querySelector("#batchStartButton");
+const batchDialogHint = document.querySelector("#batchDialogHint");
+const batchPlatformInputs = [...document.querySelectorAll("#batchDialog input[type='checkbox']")];
 let refreshTimer = 0;
 let lastRenderedLogs = "";
 let currentPlatformId = "";
@@ -98,6 +104,23 @@ function setRunAllButtonText(text) {
     runAllButton.textContent = "执行全部";
     runAllFeedbackTimer = 0;
   }, 1600);
+}
+
+function openBatchDialog() {
+  if (!batchDialog) return;
+  batchDialog.hidden = false;
+  batchDialogHint.textContent = "将按勾选顺序逐个平台执行，不并发，不绕过登录或安全检查。";
+  batchStartButton?.focus();
+}
+
+function closeBatchDialog() {
+  if (batchDialog) {
+    batchDialog.hidden = true;
+  }
+}
+
+function getSelectedBatchPlatforms() {
+  return batchPlatformInputs.filter((input) => input.checked).map((input) => input.value);
 }
 
 function renderState(state) {
@@ -239,21 +262,22 @@ async function openProjectPage() {
 }
 
 async function runAllPlatforms() {
-  setDisabled(platformButtons, true);
-  setDisabled(openButtons, true);
   setDisabled([runAllButton], true);
-  if (statusText) statusText.textContent = "批量执行中";
-  startLiveRefresh();
+  const platformIds = getSelectedBatchPlatforms();
+  if (!platformIds.length) {
+    batchDialogHint.textContent = "请至少选择一个平台。";
+    setDisabled([runAllButton], false);
+    return;
+  }
+
   try {
-    renderState(await sendMessage({ type: "run-all-platforms" }));
-    setRunAllButtonText("已完成");
+    await sendMessage({ type: "open-batch-runner", platformIds });
+    closeBatchDialog();
+    setRunAllButtonText("已打开");
   } catch {
     setRunAllButtonText("执行失败");
   } finally {
-    setDisabled(platformButtons, false);
-    setDisabled(openButtons, false);
     setDisabled([runAllButton], false);
-    window.setTimeout(refreshAndManageTimer, 250);
   }
 }
 
@@ -265,7 +289,15 @@ for (const button of openButtons) {
   on(button, "click", () => openPlatform(button.dataset.openPlatform));
 }
 
-on(runAllButton, "click", runAllPlatforms);
+on(runAllButton, "click", openBatchDialog);
+on(batchDialogClose, "click", closeBatchDialog);
+on(batchCancelButton, "click", closeBatchDialog);
+on(batchStartButton, "click", runAllPlatforms);
+on(batchDialog, "click", (event) => {
+  if (event.target === batchDialog) {
+    closeBatchDialog();
+  }
+});
 
 on(refreshButton, "click", async () => {
   await sendMessage({ type: "reset-panel" });

@@ -82,7 +82,7 @@ Community Keeper 的目标很简单：把这些重复操作收进一个轻量、
 
 也可以点击平台卡片右侧的「打开」按钮快速打开对应社区，登录后再回到扩展弹窗执行任务。
 
-顶部的「执行全部」会按顺序打开并执行所有已支持平台。它不会并发执行，也不会绕过验证码、安全检查或登录校验；如果某个平台需要手动处理，请先在对应页面完成后再执行。
+点击「执行全部」后，可以先勾选要执行的平台，再打开独立执行窗口查看过程。批量执行会按勾选顺序逐个平台运行，不并发，也不会绕过验证码、安全检查或登录校验；如果某个平台需要手动处理，请先在对应页面完成后再执行。
 
 ## 获取方式
 
@@ -94,7 +94,7 @@ Community Keeper 的目标很简单：把这些重复操作收进一个轻量、
 ./scripts/package.sh
 ```
 
-脚本会读取 `manifest.json` 中的版本号，并在 `dist/` 下生成类似 `community-keeper-v0.1.1.zip` 的文件。
+脚本会读取 `manifest.json` 中的版本号，并在 `dist/` 下生成类似 `community-keeper-v0.1.2.zip` 的文件。
 
 ## 权限说明
 
@@ -133,6 +133,9 @@ Community Keeper 的目标很简单：把这些重复操作收进一个轻量、
 ├── popup.html
 ├── popup.css
 ├── popup.js
+├── runner.html
+├── runner.css
+├── runner.js
 ├── icons/
 ├── scripts/
 └── platforms/

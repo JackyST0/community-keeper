@@ -17,7 +17,7 @@ fi
 rm -rf "$BUILD_DIR" "$PACKAGE_PATH"
 mkdir -p "$BUILD_DIR"
 
-cp manifest.json background.js popup.html popup.css popup.js "$BUILD_DIR/"
+cp manifest.json background.js popup.html popup.css popup.js runner.html runner.css runner.js "$BUILD_DIR/"
 cp -R icons platforms "$BUILD_DIR/"
 rm -f "$BUILD_DIR/icons/icon-source.png"
 

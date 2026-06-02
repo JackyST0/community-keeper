@@ -2,9 +2,10 @@ import { compactText, fail, fetchJson, ok, parseNumber } from "./utils.js";
 
 const BASE_URL = "https://www.nodeseek.com";
 
-async function getActiveNodeSeekTab() {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const tab = tabs[0];
+async function getNodeSeekTab(tabId) {
+  const tab = tabId
+    ? await chrome.tabs.get(tabId)
+    : (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
   if (!tab?.id || !tab.url) return null;
 
   try {
@@ -18,10 +19,10 @@ async function getActiveNodeSeekTab() {
   return null;
 }
 
-async function runInActiveNodeSeekTab(context = {}) {
+async function runInNodeSeekTab(context = {}) {
   const log = context.log || (async () => {});
-  await log("查找当前 NodeSeek 标签页");
-  const tab = await getActiveNodeSeekTab();
+  await log(context.tabId ? "查找指定 NodeSeek 标签页" : "查找当前 NodeSeek 标签页");
+  const tab = await getNodeSeekTab(context.tabId);
   if (!tab) return null;
 
   await log("在当前页面执行 NodeSeek 签到请求");
@@ -271,7 +272,7 @@ async function getCreditSummary() {
 
 export async function runNodeSeek(context = {}) {
   const log = context.log || (async () => {});
-  const pageResult = await runInActiveNodeSeekTab(context);
+  const pageResult = await runInNodeSeekTab(context);
   if (pageResult) {
     return pageResult;
   }

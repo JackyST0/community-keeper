@@ -39,19 +39,51 @@ const platforms = {
 };
 const PLATFORM_ORDER = ["v2ex", "nodeseek", "linuxdo", "naixi"];
 
+function normalizePlatformIds(platformIds = PLATFORM_ORDER) {
+  const selected = Array.isArray(platformIds) && platformIds.length ? platformIds : PLATFORM_ORDER;
+  const allowed = new Set(selected);
+  return PLATFORM_ORDER.filter((platformId) => allowed.has(platformId) && platforms[platformId]);
+}
+
+function getBatchRunnerHeight(platformCount) {
+  const safeCount = Math.max(1, Number(platformCount) || 1);
+  return Math.min(760, 470 + (safeCount - 1) * 88);
+}
+
 async function getActiveTabUrl() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   return tabs[0]?.url || "";
+}
+
+async function getTabUrl(tabId) {
+  if (!tabId) return getActiveTabUrl();
+  const tab = await chrome.tabs.get(tabId);
+  return tab?.url || "";
+}
+
+async function getNormalWindowId() {
+  const windows = await chrome.windows.getAll({ windowTypes: ["normal"] });
+  const focusedWindow = windows.find((item) => item.focused);
+  return focusedWindow?.id || windows[0]?.id;
+}
+
+async function createPlatformTab(url) {
+  const windowId = await getNormalWindowId();
+  return chrome.tabs.create({
+    url,
+    active: true,
+    ...(windowId ? { windowId } : {}),
+  });
 }
 
 function hostnameMatches(hostname, allowedHosts) {
   return allowedHosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
 }
 
-async function validateActivePlatformTab(platform) {
+async function validatePlatformTab(platform, tabId) {
   let url;
   try {
-    url = new URL(await getActiveTabUrl());
+    url = new URL(await getTabUrl(tabId));
   } catch {
     return platform.hint || "请先切换到对应平台页面";
   }
@@ -198,6 +230,7 @@ async function runPlatform(platformId, options = {}) {
     resetLogs = true,
     resetRuns = true,
     runningDetail = "执行中",
+    targetTabId = null,
   } = options;
   const platform = platforms[platformId];
   if (!platform) {
@@ -236,7 +269,7 @@ async function runPlatform(platformId, options = {}) {
   try {
     await logProgress("开始执行");
     await logProgress("检查当前标签页");
-    const tabError = await validateActivePlatformTab(platform);
+    const tabError = await validatePlatformTab(platform, targetTabId);
     if (tabError) {
       const entry = {
         platformId,
@@ -250,7 +283,7 @@ async function runPlatform(platformId, options = {}) {
       return getState();
     }
 
-    const result = await platform.run({ log: logProgress });
+    const result = await platform.run({ log: logProgress, tabId: targetTabId });
     const entry = {
       platformId,
       name: platform.name,
@@ -281,7 +314,7 @@ async function openPlatform(platformId) {
     throw new Error(`Unknown platform: ${platformId}`);
   }
 
-  const tab = await chrome.tabs.create({ url: platform.homeUrl, active: true });
+  const tab = await createPlatformTab(platform.homeUrl);
   return { ok: true, tabId: tab.id };
 }
 
@@ -290,20 +323,44 @@ async function openProjectPage() {
   return { ok: true, tabId: tab.id };
 }
 
-async function runAllPlatforms() {
+async function openBatchRunner(platformIds = PLATFORM_ORDER) {
+  const selected = normalizePlatformIds(platformIds);
+  if (!selected.length) {
+    throw new Error("请至少选择一个平台");
+  }
+
+  const query = encodeURIComponent(selected.join(","));
+  const url = chrome.runtime.getURL(`runner.html?platforms=${query}`);
+  const runnerWindow = await chrome.windows.create({
+    url,
+    type: "popup",
+    width: 460,
+    height: getBatchRunnerHeight(selected.length),
+    focused: true,
+  });
+
+  return { ok: true, windowId: runnerWindow.id, platformIds: selected };
+}
+
+async function runAllPlatforms(platformIds = PLATFORM_ORDER) {
   const currentState = await getState();
   if (hasRunningTask(currentState)) {
     return currentState;
   }
 
+  const selected = normalizePlatformIds(platformIds);
+  if (!selected.length) {
+    throw new Error("请至少选择一个平台");
+  }
+
   await resetPanelState();
   await setState({ ...(await getState()), logs: [] });
 
-  for (const platformId of PLATFORM_ORDER) {
+  for (const platformId of selected) {
     const platform = platforms[platformId];
     if (!platform?.homeUrl) continue;
 
-    const tab = await chrome.tabs.create({ url: platform.homeUrl, active: true });
+    const tab = await createPlatformTab(platform.homeUrl);
     await markPlatformRunning(platformId, platform, new Date().toISOString(), "打开页面并准备执行");
     await waitForTabReady(tab.id);
     await chrome.tabs.update(tab.id, { active: true });
@@ -312,6 +369,7 @@ async function runAllPlatforms() {
       resetLogs: false,
       resetRuns: false,
       runningDetail: "执行中",
+      targetTabId: tab.id,
     });
   }
 
@@ -352,8 +410,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type === "open-project") {
       return openProjectPage();
     }
+    if (message?.type === "open-batch-runner") {
+      return openBatchRunner(message.platformIds);
+    }
     if (message?.type === "run-all-platforms") {
-      return runAllPlatforms();
+      return runAllPlatforms(message.platformIds);
     }
     return { error: "Unknown message" };
   };

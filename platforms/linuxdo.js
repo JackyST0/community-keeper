@@ -9,9 +9,10 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function getActiveLinuxDoTab() {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const tab = tabs[0];
+async function getLinuxDoTab(tabId) {
+  const tab = tabId
+    ? await chrome.tabs.get(tabId)
+    : (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
   if (!tab?.id || !tab.url) return null;
 
   try {
@@ -492,9 +493,9 @@ async function fetchConnectSummaryInTab(tabId) {
   return parts.join("\n");
 }
 
-async function runInActiveLinuxDoTab(log) {
-  await log("查找当前 LinuxDo 标签页");
-  const tab = await getActiveLinuxDoTab();
+async function runInLinuxDoTab(log, tabId) {
+  await log(tabId ? "查找指定 LinuxDo 标签页" : "查找当前 LinuxDo 标签页");
+  const tab = await getLinuxDoTab(tabId);
   if (!tab) return null;
 
   await log("创建 LinuxDo 后台标签页");
@@ -544,7 +545,7 @@ async function runInActiveLinuxDoTab(log) {
 
 export async function runLinuxDo(context = {}) {
   const log = context.log || (async () => {});
-  const result = await runInActiveLinuxDoTab(log);
+  const result = await runInLinuxDoTab(log, context.tabId);
   if (!result) {
     return fail("未找到可执行的 LinuxDo 页面，请先切换到 linux.do");
   }

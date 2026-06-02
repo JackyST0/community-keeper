@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Community Keeper Runner</title>
+    <link rel="stylesheet" href="runner.css">
+  </head>
+  <body>
+    <main class="runner-shell">
+      <header class="runner-hero">
+        <div class="brand">
+          <img src="icons/icon-48.png" alt="" aria-hidden="true">
+          <div>
+            <p>Batch Runner</p>
+            <h1>批量执行中</h1>
+            <span id="runnerStatus">准备开始</span>
+          </div>
+        </div>
+        <button id="closeRunnerButton" class="hero-close-button" type="button">完成</button>
+      </header>
+
+      <section class="runner-platforms" id="runnerPlatforms" aria-label="平台执行状态"></section>
+
+      <section class="runner-log">
+        <div class="runner-log-heading">
+          <h2>执行结果</h2>
+          <button id="copyRunnerLogButton" type="button">复制</button>
+        </div>
+        <pre id="runnerLogOutput">准备执行...</pre>
+      </section>
+
+      <footer class="runner-footer">
+        <span id="runnerVersionText"></span>
+        <button id="projectRunnerButton" class="author-link" type="button" aria-label="打开 GitHub 项目">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.67 0 8.2c0 3.62 2.29 6.69 5.47 7.78.4.08.55-.18.55-.4 0-.2-.01-.85-.01-1.54-2.01.38-2.53-.5-2.69-.96-.09-.24-.48-.96-.82-1.16-.28-.15-.68-.52-.01-.53.63-.01 1.08.59 1.23.84.72 1.24 1.87.89 2.33.68.07-.53.28-.89.51-1.1-1.78-.21-3.64-.91-3.64-4.04 0-.89.31-1.63.82-2.2-.08-.21-.36-1.05.08-2.17 0 0 .67-.22 2.2.84A7.42 7.42 0 0 1 8 3.97c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.17.51.57.82 1.3.82 2.2 0 3.14-1.87 3.83-3.65 4.04.29.26.54.75.54 1.52 0 1.1-.01 1.99-.01 2.26 0 .22.15.48.55.4A8.1 8.1 0 0 0 16 8.2C16 3.67 12.42 0 8 0Z"/>
+          </svg>
+          <span>@JackyST0</span>
+        </button>
+      </footer>
+    </main>
+    <script src="runner.js" type="module"></script>
+  </body>
+</html>
