@@ -22,57 +22,69 @@
       </header>
 
       <section class="platforms" aria-label="平台任务">
-        <button class="platform-button" type="button" data-platform="v2ex">
-          <span class="platform-info">
-            <span class="platform-mark">
-              <img src="icons/platforms/v2ex.png" alt="" aria-hidden="true">
+        <div class="platform-card" data-platform-card="v2ex">
+          <button class="platform-button" type="button" data-platform="v2ex">
+            <span class="platform-info">
+              <span class="platform-mark">
+                <img src="icons/platforms/v2ex.png" alt="" aria-hidden="true">
+              </span>
+              <span>
+                <strong>V2EX</strong>
+                <small>每日登录奖励</small>
+              </span>
             </span>
-            <span>
-              <strong>V2EX</strong>
-              <small>每日登录奖励</small>
-            </span>
-          </span>
-          <span class="button-state" data-state-for="v2ex">待执行</span>
-        </button>
+            <span class="button-state" data-state-for="v2ex">待执行</span>
+          </button>
+          <button class="open-button" type="button" data-open-platform="v2ex">打开</button>
+        </div>
 
-        <button class="platform-button" type="button" data-platform="nodeseek">
-          <span class="platform-info">
-            <span class="platform-mark">
-              <img src="icons/platforms/nodeseek.png" alt="" aria-hidden="true">
+        <div class="platform-card" data-platform-card="nodeseek">
+          <button class="platform-button" type="button" data-platform="nodeseek">
+            <span class="platform-info">
+              <span class="platform-mark">
+                <img src="icons/platforms/nodeseek.png" alt="" aria-hidden="true">
+              </span>
+              <span>
+                <strong>NodeSeek</strong>
+                <small>每日签到</small>
+              </span>
             </span>
-            <span>
-              <strong>NodeSeek</strong>
-              <small>每日签到</small>
-            </span>
-          </span>
-          <span class="button-state" data-state-for="nodeseek">待执行</span>
-        </button>
+            <span class="button-state" data-state-for="nodeseek">待执行</span>
+          </button>
+          <button class="open-button" type="button" data-open-platform="nodeseek">打开</button>
+        </div>
 
-        <button class="platform-button" type="button" data-platform="linuxdo">
-          <span class="platform-info">
-            <span class="platform-mark">
-              <img src="icons/platforms/linuxdo.png" alt="" aria-hidden="true">
+        <div class="platform-card" data-platform-card="linuxdo">
+          <button class="platform-button" type="button" data-platform="linuxdo">
+            <span class="platform-info">
+              <span class="platform-mark">
+                <img src="icons/platforms/linuxdo.png" alt="" aria-hidden="true">
+              </span>
+              <span>
+                <strong>LinuxDo</strong>
+                <small>登录校验和浏览</small>
+              </span>
             </span>
-            <span>
-              <strong>LinuxDo</strong>
-              <small>登录校验和浏览</small>
-            </span>
-          </span>
-          <span class="button-state" data-state-for="linuxdo">待执行</span>
-        </button>
+            <span class="button-state" data-state-for="linuxdo">待执行</span>
+          </button>
+          <button class="open-button" type="button" data-open-platform="linuxdo">打开</button>
+        </div>
 
-        <button class="platform-button" type="button" data-platform="naixi">
-          <span class="platform-info">
-            <span class="platform-mark">
-              <img src="icons/platforms/naixi.png" alt="" aria-hidden="true">
+        <div class="platform-card" data-platform-card="naixi">
+          <button class="platform-button" type="button" data-platform="naixi">
+            <span class="platform-info">
+              <span class="platform-mark">
+                <img src="icons/platforms/naixi.png" alt="" aria-hidden="true">
+              </span>
+              <span>
+                <strong>奶昔论坛</strong>
+                <small>每日签到</small>
+              </span>
             </span>
-            <span>
-              <strong>奶昔论坛</strong>
-              <small>每日签到</small>
-            </span>
-          </span>
-          <span class="button-state" data-state-for="naixi">待执行</span>
-        </button>
+            <span class="button-state" data-state-for="naixi">待执行</span>
+          </button>
+          <button class="open-button" type="button" data-open-platform="naixi">打开</button>
+        </div>
       </section>
 
       <section class="result-panel" aria-label="执行结果">
@@ -85,6 +97,7 @@
         </div>
         <pre id="resultOutput">暂无记录</pre>
       </section>
+      <p class="version-text" id="versionText"></p>
     </main>
     <script src="popup.js" type="module"></script>
   </body>

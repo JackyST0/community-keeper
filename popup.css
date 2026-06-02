@@ -152,31 +152,27 @@ h1 {
   gap: 10px;
 }
 
-.platform-button {
+.platform-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 70px;
-  width: 100%;
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  color: var(--text);
   background: var(--panel-soft);
   box-shadow: var(--card-shadow);
-  cursor: pointer;
-  text-align: left;
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
-.platform-button:not(:disabled):hover {
+.platform-card:hover {
   border-color: rgba(47, 125, 246, 0.55);
   background: #ffffff;
   box-shadow: 0 14px 30px rgba(47, 125, 246, 0.14);
   transform: translateY(-1px);
 }
 
-.platform-button[data-current="true"] {
+.platform-card[data-current="true"] {
   border-color: rgba(47, 125, 246, 0.7);
   background: #ffffff;
   box-shadow:
@@ -184,11 +180,25 @@ h1 {
     0 0 0 3px rgba(47, 125, 246, 0.1);
 }
 
-.platform-button[data-current="true"] .platform-mark {
+.platform-card[data-current="true"] .platform-mark {
   border-color: rgba(47, 125, 246, 0.28);
   box-shadow:
     0 8px 18px rgba(15, 23, 42, 0.08),
     0 0 0 3px rgba(47, 125, 246, 0.08);
+}
+
+.platform-button {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
 }
 
 .platform-info {
@@ -233,6 +243,29 @@ h1 {
 
 .platform-button:disabled:hover {
   border-color: var(--border);
+}
+
+.open-button {
+  flex: 0 0 auto;
+  margin-left: 10px;
+  padding: 6px 10px;
+  border: 1px solid rgba(47, 125, 246, 0.16);
+  border-radius: 999px;
+  color: var(--accent);
+  background: rgba(47, 125, 246, 0.08);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.open-button:hover {
+  border-color: rgba(47, 125, 246, 0.3);
+  background: rgba(47, 125, 246, 0.13);
+}
+
+.open-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 .platform-button strong,
@@ -337,4 +370,11 @@ h1 {
   color: #334155;
   background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
   font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.version-text {
+  margin-top: 10px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 11px;
 }

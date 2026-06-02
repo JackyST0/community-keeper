@@ -11,24 +11,28 @@ const platforms = {
     name: "LinuxDo",
     run: runLinuxDo,
     hosts: ["linux.do"],
+    homeUrl: "https://linux.do/",
     hint: "请先切换到 linux.do 页面",
   },
   nodeseek: {
     name: "NodeSeek",
     run: runNodeSeek,
     hosts: ["nodeseek.com", "www.nodeseek.com"],
+    homeUrl: "https://www.nodeseek.com/",
     hint: "请先切换到 nodeseek.com 页面",
   },
   naixi: {
     name: "奶昔论坛",
     run: runNaixi,
     hosts: ["forum.naixi.net"],
+    homeUrl: "https://forum.naixi.net/",
     hint: "请先切换到 forum.naixi.net 页面",
   },
   v2ex: {
     name: "V2EX",
     run: runV2EX,
     hosts: ["v2ex.com", "www.v2ex.com"],
+    homeUrl: "https://www.v2ex.com/",
     hint: "请先切换到 v2ex.com 页面",
   },
 };
@@ -218,6 +222,16 @@ async function runPlatform(platformId) {
   return getState();
 }
 
+async function openPlatform(platformId) {
+  const platform = platforms[platformId];
+  if (!platform?.homeUrl) {
+    throw new Error(`Unknown platform: ${platformId}`);
+  }
+
+  const tab = await chrome.tabs.create({ url: platform.homeUrl, active: true });
+  return { ok: true, tabId: tab.id };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handle = async () => {
     if (message?.type === "linuxdo-progress") {
@@ -245,6 +259,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     if (message?.type === "run-platform") {
       return runPlatform(message.platformId);
+    }
+    if (message?.type === "open-platform") {
+      return openPlatform(message.platformId);
     }
     return { error: "Unknown message" };
   };

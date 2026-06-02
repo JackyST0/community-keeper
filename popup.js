@@ -1,10 +1,13 @@
 const platformButtons = [...document.querySelectorAll("[data-platform]")];
+const platformCards = [...document.querySelectorAll("[data-platform-card]")];
+const openButtons = [...document.querySelectorAll("[data-open-platform]")];
 const resultOutput = document.querySelector("#resultOutput");
 const statusText = document.querySelector("#statusText");
 const currentSiteText = document.querySelector("#currentSiteText");
 const refreshButton = document.querySelector("#refreshButton");
 const copyButton = document.querySelector("#copyButton");
 const clearButton = document.querySelector("#clearButton");
+const versionText = document.querySelector("#versionText");
 let refreshTimer = 0;
 let lastRenderedLogs = "";
 let currentPlatformId = "";
@@ -48,8 +51,8 @@ function setButtonState(platformId, status) {
 }
 
 function applyCurrentPlatform() {
-  for (const button of platformButtons) {
-    button.dataset.current = button.dataset.platform === currentPlatformId ? "true" : "";
+  for (const card of platformCards) {
+    card.dataset.current = card.dataset.platformCard === currentPlatformId ? "true" : "";
   }
 }
 
@@ -172,18 +175,32 @@ async function runPlatform(platformId) {
   for (const button of platformButtons) {
     button.disabled = true;
   }
+  for (const button of openButtons) {
+    button.disabled = true;
+  }
   statusText.textContent = "任务执行中";
   setButtonState(platformId, "running");
   startLiveRefresh();
   try {
     renderState(await sendMessage({ type: "run-platform", platformId }));
   } finally {
+    for (const button of openButtons) {
+      button.disabled = false;
+    }
     window.setTimeout(refreshAndManageTimer, 250);
   }
 }
 
+async function openPlatform(platformId) {
+  await sendMessage({ type: "open-platform", platformId });
+}
+
 for (const button of platformButtons) {
   button.addEventListener("click", () => runPlatform(button.dataset.platform));
+}
+
+for (const button of openButtons) {
+  button.addEventListener("click", () => openPlatform(button.dataset.openPlatform));
 }
 
 refreshButton.addEventListener("click", async () => {
@@ -200,6 +217,8 @@ clearButton.addEventListener("click", async () => {
 });
 
 copyButton.addEventListener("click", copyResult);
+
+versionText.textContent = `版本 v${chrome.runtime.getManifest().version}`;
 
 window.addEventListener("focus", async () => {
   await refreshActivePlatform();
