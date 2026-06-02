@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Community Keeper</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Community Keeper</h1>
+          <p id="statusText">准备执行</p>
+        </div>
+        <button id="refreshButton" class="icon-button" type="button" title="重置界面">↻</button>
+      </header>
+
+      <section class="platforms" aria-label="平台任务">
+        <button class="platform-button" type="button" data-platform="v2ex">
+          <span>
+            <strong>V2EX</strong>
+            <small>每日登录奖励</small>
+          </span>
+          <span class="button-state" data-state-for="v2ex">待执行</span>
+        </button>
+
+        <button class="platform-button" type="button" data-platform="nodeseek">
+          <span>
+            <strong>NodeSeek</strong>
+            <small>每日签到</small>
+          </span>
+          <span class="button-state" data-state-for="nodeseek">待执行</span>
+        </button>
+
+        <button class="platform-button" type="button" data-platform="linuxdo">
+          <span>
+            <strong>LinuxDo</strong>
+            <small>登录校验和浏览</small>
+          </span>
+          <span class="button-state" data-state-for="linuxdo">待执行</span>
+        </button>
+
+        <button class="platform-button" type="button" data-platform="naixi">
+          <span>
+            <strong>奶昔论坛</strong>
+            <small>k_misign 签到</small>
+          </span>
+          <span class="button-state" data-state-for="naixi">待执行</span>
+        </button>
+      </section>
+
+      <section class="result-panel" aria-label="执行结果">
+        <div class="result-heading">
+          <h2>最近结果</h2>
+          <button id="clearButton" type="button">清空</button>
+        </div>
+        <pre id="resultOutput">暂无记录</pre>
+      </section>
+    </main>
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

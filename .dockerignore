@@ -1,9 +1,0 @@
-.git
-.venv
-__pycache__
-.pytest_cache
-.cursor
-*.pyc
-*.pyo
-*.log
-data

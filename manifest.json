@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Community Keeper",
+  "description": "Run community daily tasks with the current browser login session.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "Community Keeper",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.v2ex.com/*",
+    "https://v2ex.com/*",
+    "https://www.nodeseek.com/*",
+    "https://nodeseek.com/*",
+    "https://linux.do/*",
+    "https://connect.linux.do/*",
+    "https://forum.naixi.net/*",
+    "https://*.naixi.net/*"
+  ]
+}
