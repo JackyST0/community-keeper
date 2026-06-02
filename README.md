@@ -146,3 +146,18 @@ Community Keeper 的目标很简单：把这些重复操作收进一个轻量、
 ## 免责声明
 
 Community Keeper 只用于简化个人日常操作。请遵守各社区规则，避免滥用、批量化或影响社区正常服务。
+
+## 支持项目
+
+如果这个扩展节省了你的时间，欢迎给项目点个 Star。  
+也可以自愿请作者喝杯咖啡，你的支持会用于后续维护和适配更多社区。
+
+<details>
+<summary>赞赏码</summary>
+
+<p>
+  <img src="assets/sponsor-wechat.png" width="220" alt="微信赞赏码">
+  <img src="assets/sponsor-alipay.png" width="220" alt="支付宝赞赏码">
+</p>
+
+</details>
