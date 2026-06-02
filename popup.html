@@ -18,8 +18,19 @@
             <p id="currentSiteText" class="site-hint">正在识别当前页面</p>
           </div>
         </div>
-        <button id="refreshButton" class="icon-button" type="button" title="重置界面">↻</button>
+        <div class="top-actions">
+          <button id="refreshButton" class="icon-button" type="button" title="重置界面">↻</button>
+        </div>
       </header>
+
+      <section class="batch-panel" aria-label="批量执行">
+        <div>
+          <p class="batch-kicker">Batch Runner</p>
+          <h2>顺序执行全部平台</h2>
+          <p>逐个打开并执行，不并发，不绕过登录或安全检查。</p>
+        </div>
+        <button id="runAllButton" class="batch-button" type="button">执行全部</button>
+      </section>
 
       <section class="platforms" aria-label="平台任务">
         <div class="platform-card" data-platform-card="v2ex">
@@ -97,7 +108,10 @@
         </div>
         <pre id="resultOutput">暂无记录</pre>
       </section>
-      <p class="version-text" id="versionText"></p>
+      <footer class="footer-links">
+        <span id="versionText"></span>
+        <button id="projectButton" type="button">GitHub 项目</button>
+      </footer>
     </main>
     <script src="popup.js" type="module"></script>
   </body>

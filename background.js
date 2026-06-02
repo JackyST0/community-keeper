@@ -5,6 +5,7 @@ import { runV2EX } from "./platforms/v2ex.js";
 
 const STORAGE_KEY = "communityKeeperState";
 const MAX_LOGS = 60;
+const PROJECT_URL = "https://github.com/JackyST0/community-keeper";
 
 const platforms = {
   linuxdo: {
@@ -36,6 +37,7 @@ const platforms = {
     hint: "请先切换到 v2ex.com 页面",
   },
 };
+const PLATFORM_ORDER = ["v2ex", "nodeseek", "linuxdo", "naixi"];
 
 async function getActiveTabUrl() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -131,6 +133,19 @@ async function resetRunsForNewRun(activePlatformId, platform, startedAt) {
   return setState(state);
 }
 
+async function markPlatformRunning(platformId, platform, startedAt, detail = "执行中") {
+  const state = await getState();
+  state.runs = state.runs || {};
+  state.runs[platformId] = {
+    platformId,
+    name: platform.name,
+    status: "running",
+    detail,
+    startedAt,
+  };
+  return setState(state);
+}
+
 async function resetPanelState() {
   const runs = {};
   for (const [platformId, platformConfig] of Object.entries(platforms)) {
@@ -153,20 +168,58 @@ async function appendLog(entry) {
   return setState(state);
 }
 
-async function runPlatform(platformId) {
+function waitForTabReady(tabId, timeoutMs = 15000) {
+  return new Promise((resolve) => {
+    let done = false;
+    let timer = 0;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      globalThis.clearTimeout(timer);
+      chrome.tabs.onUpdated.removeListener(listener);
+      resolve();
+    };
+
+    const listener = (updatedTabId, changeInfo) => {
+      if (updatedTabId === tabId && changeInfo.status === "complete") {
+        finish();
+      }
+    };
+
+    chrome.tabs.onUpdated.addListener(listener);
+    timer = globalThis.setTimeout(finish, timeoutMs);
+  });
+}
+
+async function runPlatform(platformId, options = {}) {
+  const {
+    ignoreRunning = false,
+    resetLogs = true,
+    resetRuns = true,
+    runningDetail = "执行中",
+  } = options;
   const platform = platforms[platformId];
   if (!platform) {
     throw new Error(`Unknown platform: ${platformId}`);
   }
 
-  const currentState = await getState();
-  if (hasRunningTask(currentState)) {
-    return currentState;
+  if (!ignoreRunning) {
+    const currentState = await getState();
+    if (hasRunningTask(currentState)) {
+      return currentState;
+    }
   }
 
-  await resetLogsForRun();
+  if (resetLogs) {
+    await resetLogsForRun();
+  }
   const startedAt = new Date().toISOString();
-  await resetRunsForNewRun(platformId, platform, startedAt);
+  if (resetRuns) {
+    await resetRunsForNewRun(platformId, platform, startedAt);
+  } else {
+    await markPlatformRunning(platformId, platform, startedAt, runningDetail);
+  }
 
   const logProgress = async (detail) => {
     if (platformId !== "linuxdo") return;
@@ -232,6 +285,39 @@ async function openPlatform(platformId) {
   return { ok: true, tabId: tab.id };
 }
 
+async function openProjectPage() {
+  const tab = await chrome.tabs.create({ url: PROJECT_URL, active: true });
+  return { ok: true, tabId: tab.id };
+}
+
+async function runAllPlatforms() {
+  const currentState = await getState();
+  if (hasRunningTask(currentState)) {
+    return currentState;
+  }
+
+  await resetPanelState();
+  await setState({ ...(await getState()), logs: [] });
+
+  for (const platformId of PLATFORM_ORDER) {
+    const platform = platforms[platformId];
+    if (!platform?.homeUrl) continue;
+
+    const tab = await chrome.tabs.create({ url: platform.homeUrl, active: true });
+    await markPlatformRunning(platformId, platform, new Date().toISOString(), "打开页面并准备执行");
+    await waitForTabReady(tab.id);
+    await chrome.tabs.update(tab.id, { active: true });
+    await runPlatform(platformId, {
+      ignoreRunning: true,
+      resetLogs: false,
+      resetRuns: false,
+      runningDetail: "执行中",
+    });
+  }
+
+  return getState();
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handle = async () => {
     if (message?.type === "linuxdo-progress") {
@@ -262,6 +348,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     if (message?.type === "open-platform") {
       return openPlatform(message.platformId);
+    }
+    if (message?.type === "open-project") {
+      return openProjectPage();
+    }
+    if (message?.type === "run-all-platforms") {
+      return runAllPlatforms();
     }
     return { error: "Unknown message" };
   };

@@ -4,14 +4,17 @@ const openButtons = [...document.querySelectorAll("[data-open-platform]")];
 const resultOutput = document.querySelector("#resultOutput");
 const statusText = document.querySelector("#statusText");
 const currentSiteText = document.querySelector("#currentSiteText");
+const runAllButton = document.querySelector("#runAllButton");
 const refreshButton = document.querySelector("#refreshButton");
 const copyButton = document.querySelector("#copyButton");
 const clearButton = document.querySelector("#clearButton");
+const projectButton = document.querySelector("#projectButton");
 const versionText = document.querySelector("#versionText");
 let refreshTimer = 0;
 let lastRenderedLogs = "";
 let currentPlatformId = "";
 let copyFeedbackTimer = 0;
+let runAllFeedbackTimer = 0;
 
 const stateLabels = {
   idle: "待执行",
@@ -22,7 +25,24 @@ const stateLabels = {
 };
 
 function sendMessage(message) {
-  return chrome.runtime.sendMessage(message);
+  return chrome.runtime.sendMessage(message).then((response) => {
+    if (response?.error) {
+      throw new Error(response.error);
+    }
+    return response;
+  });
+}
+
+function setDisabled(elements, disabled) {
+  for (const element of elements) {
+    if (element) element.disabled = disabled;
+  }
+}
+
+function on(element, eventName, handler) {
+  if (element) {
+    element.addEventListener(eventName, handler);
+  }
 }
 
 function formatTime(value) {
@@ -57,6 +77,7 @@ function applyCurrentPlatform() {
 }
 
 function setCopyButtonText(text) {
+  if (!copyButton) return;
   copyButton.textContent = text;
   if (copyFeedbackTimer) {
     window.clearTimeout(copyFeedbackTimer);
@@ -65,6 +86,18 @@ function setCopyButtonText(text) {
     copyButton.textContent = "复制";
     copyFeedbackTimer = 0;
   }, 1200);
+}
+
+function setRunAllButtonText(text) {
+  if (!runAllButton) return;
+  runAllButton.textContent = text;
+  if (runAllFeedbackTimer) {
+    window.clearTimeout(runAllFeedbackTimer);
+  }
+  runAllFeedbackTimer = window.setTimeout(() => {
+    runAllButton.textContent = "执行全部";
+    runAllFeedbackTimer = 0;
+  }, 1600);
 }
 
 function renderState(state) {
@@ -95,7 +128,9 @@ function renderState(state) {
   }
   applyCurrentPlatform();
 
-  statusText.textContent = running ? "任务执行中" : "准备执行";
+  if (statusText) {
+    statusText.textContent = running ? "任务执行中" : "准备执行";
+  }
 
   const renderedLogs = logs.length
     ? logs
@@ -110,6 +145,7 @@ function renderState(state) {
     : "暂无记录";
 
   if (renderedLogs !== lastRenderedLogs) {
+    if (!resultOutput) return;
     resultOutput.textContent = renderedLogs;
     resultOutput.scrollTop = resultOutput.scrollHeight;
     lastRenderedLogs = renderedLogs;
@@ -117,6 +153,7 @@ function renderState(state) {
 }
 
 async function copyResult() {
+  if (!resultOutput) return;
   const text = resultOutput.textContent.trim();
   if (!text || text === "暂无记录") {
     setCopyButtonText("无内容");
@@ -134,8 +171,10 @@ async function copyResult() {
 async function refreshActivePlatform() {
   const activePlatform = await sendMessage({ type: "get-active-platform" });
   currentPlatformId = activePlatform?.supported ? activePlatform.platformId : "";
-  currentSiteText.textContent = activePlatform?.detail || "当前页面暂不支持";
-  currentSiteText.dataset.supported = activePlatform?.supported ? "true" : "false";
+  if (currentSiteText) {
+    currentSiteText.textContent = activePlatform?.detail || "当前页面暂不支持";
+    currentSiteText.dataset.supported = activePlatform?.supported ? "true" : "false";
+  }
   applyCurrentPlatform();
   return activePlatform;
 }
@@ -172,53 +211,81 @@ async function refreshAndManageTimer() {
 }
 
 async function runPlatform(platformId) {
-  for (const button of platformButtons) {
-    button.disabled = true;
-  }
-  for (const button of openButtons) {
-    button.disabled = true;
-  }
-  statusText.textContent = "任务执行中";
+  setDisabled(platformButtons, true);
+  setDisabled(openButtons, true);
+  setDisabled([runAllButton], true);
+  if (statusText) statusText.textContent = "任务执行中";
   setButtonState(platformId, "running");
   startLiveRefresh();
   try {
     renderState(await sendMessage({ type: "run-platform", platformId }));
   } finally {
-    for (const button of openButtons) {
-      button.disabled = false;
-    }
+    setDisabled(openButtons, false);
+    setDisabled([runAllButton], false);
     window.setTimeout(refreshAndManageTimer, 250);
   }
 }
 
 async function openPlatform(platformId) {
-  await sendMessage({ type: "open-platform", platformId });
+  try {
+    await sendMessage({ type: "open-platform", platformId });
+  } catch {
+    setButtonState(platformId, "error");
+  }
+}
+
+async function openProjectPage() {
+  await sendMessage({ type: "open-project" });
+}
+
+async function runAllPlatforms() {
+  setDisabled(platformButtons, true);
+  setDisabled(openButtons, true);
+  setDisabled([runAllButton], true);
+  if (statusText) statusText.textContent = "批量执行中";
+  startLiveRefresh();
+  try {
+    renderState(await sendMessage({ type: "run-all-platforms" }));
+    setRunAllButtonText("已完成");
+  } catch {
+    setRunAllButtonText("执行失败");
+  } finally {
+    setDisabled(platformButtons, false);
+    setDisabled(openButtons, false);
+    setDisabled([runAllButton], false);
+    window.setTimeout(refreshAndManageTimer, 250);
+  }
 }
 
 for (const button of platformButtons) {
-  button.addEventListener("click", () => runPlatform(button.dataset.platform));
+  on(button, "click", () => runPlatform(button.dataset.platform));
 }
 
 for (const button of openButtons) {
-  button.addEventListener("click", () => openPlatform(button.dataset.openPlatform));
+  on(button, "click", () => openPlatform(button.dataset.openPlatform));
 }
 
-refreshButton.addEventListener("click", async () => {
+on(runAllButton, "click", runAllPlatforms);
+
+on(refreshButton, "click", async () => {
   await sendMessage({ type: "reset-panel" });
   lastRenderedLogs = "";
   await refreshActivePlatform();
   await refreshState();
 });
 
-clearButton.addEventListener("click", async () => {
+on(clearButton, "click", async () => {
   await sendMessage({ type: "clear-logs" });
   lastRenderedLogs = "";
   await refreshState();
 });
 
-copyButton.addEventListener("click", copyResult);
+on(copyButton, "click", copyResult);
+on(projectButton, "click", openProjectPage);
 
-versionText.textContent = `版本 v${chrome.runtime.getManifest().version}`;
+if (versionText) {
+  versionText.textContent = `版本 v${chrome.runtime.getManifest().version}`;
+}
 
 window.addEventListener("focus", async () => {
   await refreshActivePlatform();
