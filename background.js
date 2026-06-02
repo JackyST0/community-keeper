@@ -56,6 +56,41 @@ async function validateActivePlatformTab(platform) {
   return "";
 }
 
+async function getActivePlatform() {
+  let url;
+  try {
+    url = new URL(await getActiveTabUrl());
+  } catch {
+    return {
+      platformId: "",
+      name: "",
+      hostname: "",
+      supported: false,
+      detail: "当前页面暂不支持",
+    };
+  }
+
+  for (const [platformId, platform] of Object.entries(platforms)) {
+    if (hostnameMatches(url.hostname, platform.hosts || [])) {
+      return {
+        platformId,
+        name: platform.name,
+        hostname: url.hostname,
+        supported: true,
+        detail: `当前页面：${platform.name}，可执行`,
+      };
+    }
+  }
+
+  return {
+    platformId: "",
+    name: "",
+    hostname: url.hostname,
+    supported: false,
+    detail: "当前页面暂不支持",
+  };
+}
+
 async function getState() {
   const data = await chrome.storage.local.get(STORAGE_KEY);
   return data[STORAGE_KEY] || { runs: {}, logs: [] };
@@ -197,6 +232,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     if (message?.type === "get-state") {
       return getState();
+    }
+    if (message?.type === "get-active-platform") {
+      return getActivePlatform();
     }
     if (message?.type === "clear-logs") {
       const state = await getState();

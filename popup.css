@@ -108,6 +108,26 @@ h1 {
   color: rgba(255, 255, 255, 0.78);
 }
 
+.site-hint {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.site-hint[data-supported="false"] {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.site-hint[data-supported="true"] {
+  color: #ffffff;
+  background: rgba(34, 197, 94, 0.22);
+}
+
 .icon-button {
   position: relative;
   z-index: 1;
@@ -154,6 +174,21 @@ h1 {
   background: #ffffff;
   box-shadow: 0 14px 30px rgba(47, 125, 246, 0.14);
   transform: translateY(-1px);
+}
+
+.platform-button[data-current="true"] {
+  border-color: rgba(47, 125, 246, 0.7);
+  background: #ffffff;
+  box-shadow:
+    0 14px 30px rgba(47, 125, 246, 0.16),
+    0 0 0 3px rgba(47, 125, 246, 0.1);
+}
+
+.platform-button[data-current="true"] .platform-mark {
+  border-color: rgba(47, 125, 246, 0.28);
+  box-shadow:
+    0 8px 18px rgba(15, 23, 42, 0.08),
+    0 0 0 3px rgba(47, 125, 246, 0.08);
 }
 
 .platform-info {

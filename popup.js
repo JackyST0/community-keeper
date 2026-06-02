@@ -1,10 +1,12 @@
 const platformButtons = [...document.querySelectorAll("[data-platform]")];
 const resultOutput = document.querySelector("#resultOutput");
 const statusText = document.querySelector("#statusText");
+const currentSiteText = document.querySelector("#currentSiteText");
 const refreshButton = document.querySelector("#refreshButton");
 const clearButton = document.querySelector("#clearButton");
 let refreshTimer = 0;
 let lastRenderedLogs = "";
+let currentPlatformId = "";
 
 const stateLabels = {
   idle: "待执行",
@@ -43,6 +45,12 @@ function setButtonState(platformId, status) {
   state.textContent = stateLabels[status] || stateLabels.idle;
 }
 
+function applyCurrentPlatform() {
+  for (const button of platformButtons) {
+    button.dataset.current = button.dataset.platform === currentPlatformId ? "true" : "";
+  }
+}
+
 function renderState(state) {
   const runs = state?.runs || {};
   const logs = state?.logs || [];
@@ -69,6 +77,7 @@ function renderState(state) {
       : "";
     setButtonState(platformId, status);
   }
+  applyCurrentPlatform();
 
   statusText.textContent = running ? "任务执行中" : "准备执行";
 
@@ -89,6 +98,15 @@ function renderState(state) {
     resultOutput.scrollTop = resultOutput.scrollHeight;
     lastRenderedLogs = renderedLogs;
   }
+}
+
+async function refreshActivePlatform() {
+  const activePlatform = await sendMessage({ type: "get-active-platform" });
+  currentPlatformId = activePlatform?.supported ? activePlatform.platformId : "";
+  currentSiteText.textContent = activePlatform?.detail || "当前页面暂不支持";
+  currentSiteText.dataset.supported = activePlatform?.supported ? "true" : "false";
+  applyCurrentPlatform();
+  return activePlatform;
 }
 
 async function refreshState() {
@@ -143,6 +161,7 @@ for (const button of platformButtons) {
 refreshButton.addEventListener("click", async () => {
   await sendMessage({ type: "reset-panel" });
   lastRenderedLogs = "";
+  await refreshActivePlatform();
   await refreshState();
 });
 
@@ -152,11 +171,14 @@ clearButton.addEventListener("click", async () => {
   await refreshState();
 });
 
-window.addEventListener("focus", refreshAndManageTimer);
+window.addEventListener("focus", async () => {
+  await refreshActivePlatform();
+  await refreshAndManageTimer();
+});
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    refreshAndManageTimer();
+    refreshActivePlatform().finally(refreshAndManageTimer);
   }
 });
 
-refreshAndManageTimer();
+refreshActivePlatform().finally(refreshAndManageTimer);
