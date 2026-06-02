@@ -9,42 +9,66 @@
   <body>
     <main class="shell">
       <header class="topbar">
-        <div>
-          <h1>Community Keeper</h1>
-          <p id="statusText">准备执行</p>
+        <div class="brand">
+          <img src="icons/icon-32.png" alt="" aria-hidden="true">
+          <div>
+            <p class="eyebrow">Daily Assistant</p>
+            <h1>Community Keeper</h1>
+            <p id="statusText">准备执行</p>
+          </div>
         </div>
         <button id="refreshButton" class="icon-button" type="button" title="重置界面">↻</button>
       </header>
 
       <section class="platforms" aria-label="平台任务">
         <button class="platform-button" type="button" data-platform="v2ex">
-          <span>
-            <strong>V2EX</strong>
-            <small>每日登录奖励</small>
+          <span class="platform-info">
+            <span class="platform-mark">
+              <img src="icons/platforms/v2ex.png" alt="" aria-hidden="true">
+            </span>
+            <span>
+              <strong>V2EX</strong>
+              <small>每日登录奖励</small>
+            </span>
           </span>
           <span class="button-state" data-state-for="v2ex">待执行</span>
         </button>
 
         <button class="platform-button" type="button" data-platform="nodeseek">
-          <span>
-            <strong>NodeSeek</strong>
-            <small>每日签到</small>
+          <span class="platform-info">
+            <span class="platform-mark">
+              <img src="icons/platforms/nodeseek.png" alt="" aria-hidden="true">
+            </span>
+            <span>
+              <strong>NodeSeek</strong>
+              <small>每日签到</small>
+            </span>
           </span>
           <span class="button-state" data-state-for="nodeseek">待执行</span>
         </button>
 
         <button class="platform-button" type="button" data-platform="linuxdo">
-          <span>
-            <strong>LinuxDo</strong>
-            <small>登录校验和浏览</small>
+          <span class="platform-info">
+            <span class="platform-mark">
+              <img src="icons/platforms/linuxdo.png" alt="" aria-hidden="true">
+            </span>
+            <span>
+              <strong>LinuxDo</strong>
+              <small>登录校验和浏览</small>
+            </span>
           </span>
           <span class="button-state" data-state-for="linuxdo">待执行</span>
         </button>
 
         <button class="platform-button" type="button" data-platform="naixi">
-          <span>
-            <strong>奶昔论坛</strong>
-            <small>k_misign 签到</small>
+          <span class="platform-info">
+            <span class="platform-mark">
+              <img src="icons/platforms/naixi.png" alt="" aria-hidden="true">
+            </span>
+            <span>
+              <strong>奶昔论坛</strong>
+              <small>k_misign 签到</small>
+            </span>
           </span>
           <span class="button-state" data-state-for="naixi">待执行</span>
         </button>
