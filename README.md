@@ -1,4 +1,20 @@
-# Community Keeper
+<p align="center">
+  <img src="icons/icon-128.png" width="96" height="96" alt="Community Keeper 图标">
+</p>
+
+<h1 align="center">Community Keeper</h1>
+
+<p align="center">
+  一个轻量、本地、透明的社区日常任务浏览器扩展。
+</p>
+
+<p align="center">
+  <a href="https://github.com/JackyST0/community-keeper/releases">
+    <img alt="Release" src="https://img.shields.io/github/v/release/JackyST0/community-keeper?color=2f7df6">
+  </a>
+  <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-1746b8">
+  <img alt="Local First" src="https://img.shields.io/badge/Local-First-059669">
+</p>
 
 Community Keeper 是一个面向社区用户的浏览器扩展，用当前浏览器登录态完成常用社区的日常任务。
 
@@ -21,10 +37,21 @@ Community Keeper 的目标很简单：把这些重复操作收进一个轻量、
 
 ## 支持平台
 
-- V2EX：每日登录奖励
-- NodeSeek：每日签到
-- LinuxDo：登录校验、浏览任务和基础互动
-- 奶昔论坛：每日签到
+<p>
+  <img src="icons/platforms/v2ex.png" width="22" height="22" alt="V2EX"> <strong>V2EX</strong>：每日登录奖励
+</p>
+
+<p>
+  <img src="icons/platforms/nodeseek.png" width="22" height="22" alt="NodeSeek"> <strong>NodeSeek</strong>：每日签到
+</p>
+
+<p>
+  <img src="icons/platforms/linuxdo.png" width="22" height="22" alt="LinuxDo"> <strong>LinuxDo</strong>：登录校验、浏览任务和基础互动
+</p>
+
+<p>
+  <img src="icons/platforms/naixi.png" width="22" height="22" alt="奶昔论坛"> <strong>奶昔论坛</strong>：每日签到
+</p>
 
 ## 快速安装
 
