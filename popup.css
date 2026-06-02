@@ -303,7 +303,13 @@ h1 {
   letter-spacing: -0.01em;
 }
 
-.result-heading button {
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.result-actions button {
   padding: 5px 9px;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -313,7 +319,7 @@ h1 {
   font-weight: 700;
 }
 
-.result-heading button:hover {
+.result-actions button:hover {
   border-color: rgba(47, 125, 246, 0.2);
   background: rgba(47, 125, 246, 0.08);
 }

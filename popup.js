@@ -3,10 +3,12 @@ const resultOutput = document.querySelector("#resultOutput");
 const statusText = document.querySelector("#statusText");
 const currentSiteText = document.querySelector("#currentSiteText");
 const refreshButton = document.querySelector("#refreshButton");
+const copyButton = document.querySelector("#copyButton");
 const clearButton = document.querySelector("#clearButton");
 let refreshTimer = 0;
 let lastRenderedLogs = "";
 let currentPlatformId = "";
+let copyFeedbackTimer = 0;
 
 const stateLabels = {
   idle: "待执行",
@@ -49,6 +51,17 @@ function applyCurrentPlatform() {
   for (const button of platformButtons) {
     button.dataset.current = button.dataset.platform === currentPlatformId ? "true" : "";
   }
+}
+
+function setCopyButtonText(text) {
+  copyButton.textContent = text;
+  if (copyFeedbackTimer) {
+    window.clearTimeout(copyFeedbackTimer);
+  }
+  copyFeedbackTimer = window.setTimeout(() => {
+    copyButton.textContent = "复制";
+    copyFeedbackTimer = 0;
+  }, 1200);
 }
 
 function renderState(state) {
@@ -97,6 +110,21 @@ function renderState(state) {
     resultOutput.textContent = renderedLogs;
     resultOutput.scrollTop = resultOutput.scrollHeight;
     lastRenderedLogs = renderedLogs;
+  }
+}
+
+async function copyResult() {
+  const text = resultOutput.textContent.trim();
+  if (!text || text === "暂无记录") {
+    setCopyButtonText("无内容");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    setCopyButtonText("已复制");
+  } catch {
+    setCopyButtonText("复制失败");
   }
 }
 
@@ -170,6 +198,8 @@ clearButton.addEventListener("click", async () => {
   lastRenderedLogs = "";
   await refreshState();
 });
+
+copyButton.addEventListener("click", copyResult);
 
 window.addEventListener("focus", async () => {
   await refreshActivePlatform();
