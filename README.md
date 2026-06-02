@@ -44,6 +44,13 @@ Community Keeper 是一个浏览器扩展，用当前浏览器的登录态执行
 
 这些权限只用于执行你在弹窗中手动触发的平台任务。
 
+## 隐私与数据
+
+- 扩展不会把账号信息、Cookie 或执行结果上传到第三方服务。
+- 扩展不要求你手动填写 Cookie，只使用当前浏览器里已经存在的登录态。
+- 最近执行结果只保存在浏览器本地的扩展存储中，可在弹窗中点击「清空」删除。
+- 任务请求只会发往 `manifest.json` 中声明的已支持社区域名。
+
 ## 项目结构
 
 ```text
@@ -54,6 +61,7 @@ Community Keeper 是一个浏览器扩展，用当前浏览器的登录态执行
 ├── popup.css
 ├── popup.js
 ├── icons/
+├── scripts/
 └── platforms/
     ├── linuxdo.js
     ├── naixi.js
@@ -74,3 +82,13 @@ Community Keeper 是一个浏览器扩展，用当前浏览器的登录态执行
 修改代码后，在扩展程序管理页点击「重新加载」即可生效。
 
 如果修改了 `manifest.json`、图标或后台脚本，建议同时关闭并重新打开扩展弹窗。
+
+## 打包
+
+生成可分发的扩展压缩包：
+
+```bash
+./scripts/package.sh
+```
+
+脚本会读取 `manifest.json` 中的版本号，并在 `dist/` 下生成类似 `community-keeper-v0.1.0.zip` 的文件。
