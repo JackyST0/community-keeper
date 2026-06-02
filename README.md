@@ -51,6 +51,8 @@ Community Keeper 是一个浏览器扩展，用当前浏览器的登录态执行
 - 最近执行结果只保存在浏览器本地的扩展存储中，可在弹窗中点击「清空」删除。
 - 任务请求只会发往 `manifest.json` 中声明的已支持社区域名。
 
+完整说明见 [隐私政策](PRIVACY.md)。
+
 ## 项目结构
 
 ```text
@@ -92,3 +94,5 @@ Community Keeper 是一个浏览器扩展，用当前浏览器的登录态执行
 ```
 
 脚本会读取 `manifest.json` 中的版本号，并在 `dist/` 下生成类似 `community-keeper-v0.1.0.zip` 的文件。
+
+版本变更记录见 [更新日志](CHANGELOG.md)。
